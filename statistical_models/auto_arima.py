@@ -1,86 +1,80 @@
 import pandas as pd
-import matplotlib.pyplot as plt
-from statsmodels.tsa.arima.model import ARIMA
-from pmdarima import auto_arima
+import numpy as np
 import warnings
+from itertools import product
+from statsmodels.tsa.arima.model import ARIMA
+from dataset.draw import show_pred_result
+from statistical_models.arima import data_preprocessing
+
 warnings.filterwarnings("ignore")
 
 
-def auto_arima_forecast(df, forecast_steps=10, seasonal=False, m=1, plot=True):
+def auto_arima_forecast(df, forecast_steps=10, max_p=3, max_d=2, max_q=3, plot=True):
     """
-    使用 auto_arima 自动确定最优参数并进行 ARIMA 时序预测
+    自动确定 ARIMA(p, d, q) 最优参数，并进行预测。
+    仅使用 statsmodels，不依赖 pmdarima。
 
     参数：
-        df : pd.DataFrame
-            第一列为时间戳，最后一列为需要预测的目标序列
-        forecast_steps : int
-            预测未来步数
-        seasonal : bool
-            是否考虑季节性（默认 False）
-        m : int
-            每个季节的周期（当 seasonal=True 时生效，例如12代表一年12个月）
-        plot : bool
-            是否绘制预测图像
+        df: DataFrame，第一列为时间戳，最后一列为目标变量
+        forecast_steps: 预测步数
+        max_p, max_d, max_q: 搜索范围上限
 
     返回：
-        result_df : pd.DataFrame
-            包含历史值与预测值的DataFrame
+        forecast_df: 包含预测结果的 DataFrame
+        best_order: 最优 (p, d, q)
     """
 
-    # -------- 数据准备 --------
-    time_col = df.columns[0]
-    target_col = df.columns[-1]
+    # ==== 1. 准备数据 ====
+    ts, pred_truth, freq = data_preprocessing(df, forecast_steps)
 
-    # 转换时间戳列为 datetime
-    df[time_col] = pd.to_datetime(df[time_col])
-    df = df.set_index(time_col)
+    # ==== 2. 搜索最优参数 ====
+    best_aic = np.inf
+    best_order = None
+    best_model = None
 
-    # 自动推断频率，避免警告
-    try:
-        df = df.asfreq(pd.infer_freq(df.index))
-    except:
-        df = df.asfreq('D')
+    for p, d, q in product(range(max_p + 1), range(max_d + 1), range(max_q + 1)):
+        try:
+            model = ARIMA(ts, order=(p, d, q))
+            result = model.fit()
+            if result.aic < best_aic:
+                best_aic = result.aic
+                best_order = (p, d, q)
+                best_model = result
+        except Exception:
+            continue
 
-    ts = df[target_col].astype(float)
+    print(f"✅ 最优 ARIMA 参数: (p, d, q) = {best_order}, AIC = {best_aic:.2f}")
 
-    # -------- 自动选择最优 (p, d, q) 参数 --------
-    print("正在搜索最优 ARIMA 参数，请稍候...")
-    stepwise_model = auto_arima(
-        ts,
-        seasonal=seasonal,
-        m=m,
-        trace=True,        # 打印搜索过程
-        error_action='ignore',
-        suppress_warnings=True,
-        stepwise=True
-    )
+    # ==== 3. 进行预测 ====
+    forecast = best_model.get_forecast(steps=forecast_steps)
+    forecast_mean = forecast.predicted_mean
+    forecast_ci = forecast.conf_int()
 
-    print("\n✅ 最优 ARIMA 参数:", stepwise_model.order)
-    if seasonal:
-        print("✅ 最优季节性参数:", stepwise_model.seasonal_order)
+    forecast_index = pd.date_range(
+        start=ts.index[-1], periods=forecast_steps + 1, freq=pd.infer_freq(ts.index)
+    )[1:]
 
-    # -------- 用最优参数拟合模型 --------
-    model = ARIMA(ts, order=stepwise_model.order)
-    model_fit = model.fit()
+    forecast_df = pd.DataFrame({
+        'forecast': forecast_mean.values,
+        'lower_ci': forecast_ci.iloc[:, 0].values,
+        'upper_ci': forecast_ci.iloc[:, 1].values
+    }, index=forecast_index)
 
-    # -------- 预测 --------
-    forecast = model_fit.forecast(steps=forecast_steps)
-    forecast_index = pd.date_range(start=ts.index[-1], periods=forecast_steps + 1, freq=ts.index.freq)[1:]
-    forecast_series = pd.Series(forecast, index=forecast_index, name='forecast')
+    forecast_series = forecast_df.iloc[-forecast_steps:, 0]
 
-    # -------- 合并结果 --------
-    result_df = pd.concat([ts, forecast_series], axis=0)
-
-    # -------- 绘图 --------
+    # -------- draw figure --------
     if plot:
-        plt.figure(figsize=(10, 5))
-        plt.plot(ts, label='历史数据', color='blue')
-        plt.plot(forecast_series, label='预测值', color='red', linestyle='--')
-        plt.title(f"ARIMA{stepwise_model.order} 模型预测结果")
-        plt.xlabel("时间")
-        plt.ylabel(target_col)
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+        show_pred_result(pred_truth, forecast_series, "AUTO-ARIMA", df.columns[-1])
 
-    return result_df
+    return forecast_df, best_order
+
+
+# ==== 示例使用 ====
+if __name__ == "__main__":
+    # 生成示例时间序列
+    dates = pd.date_range('2020-01-01', periods=100, freq='D')
+    y = np.sin(np.arange(100) / 5) + np.random.normal(0, 0.3, 100)
+    df = pd.DataFrame({'date': dates, 'value': y})
+
+    forecast_df, order = auto_arima_forecast(df, forecast_steps=10)
+    print(forecast_df)

@@ -1,6 +1,6 @@
 import time
 
-from imputegap.wrapper.AlgoPython.trmf.tmrfRecovery import recoveryTRMF
+from imputer.imputegap.wrapper.AlgoPython.trmf.tmrfRecovery import recoveryTRMF
 
 
 def trmf(incomp_data, lags, K, lambda_f, lambda_x, lambda_w, eta, alpha, max_iter, logs=True, verbose=True):

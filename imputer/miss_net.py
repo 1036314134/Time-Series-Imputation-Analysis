@@ -2,8 +2,8 @@ import time
 
 import numpy as np
 
-from imputegap.tools import utils
-from imputegap.wrapper.AlgoPython.MissNet.recoveryMissNet import MissNet
+from imputer.imputegap.tools import utils
+from imputer.imputegap.wrapper.AlgoPython.MissNet.recoveryMissNet import MissNet
 
 def miss_net(incomp_data, alpha, beta, L, n_cl, max_iteration, tol, random_init, tr_ratio=0.9, logs=True, verbose=True):
     """

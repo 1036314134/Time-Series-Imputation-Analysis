@@ -1,6 +1,6 @@
 import time
 
-from imputer.imputegap.wrapper.AlgoPython.GAIN.gainRecovery import gainRecovery
+from imputegap.wrapper.AlgoPython.GAIN.gainRecovery import gainRecovery
 
 
 def gain(incomp_data, batch_size=-1, hint_rate=0.9, alpha=10, epoch=100, tr_ratio=0.9, logs=True, verbose=True):

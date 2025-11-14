@@ -3,6 +3,7 @@ import pandas as pd
 from create_missing.data_processing import introduce_missing_segments
 from dataset.draw import show_specify_line, show_change
 from imputer.front_imputer import front_impute
+from imputer.iim_imputer import iim_impute
 from imputer.knn_imputer import knn_impute
 from imputer.mean_imputer import mean_impute
 from imputer.miss_forest_imputer import miss_forest
@@ -53,7 +54,10 @@ def use_imputer(df_missing, missing_rate, missing_column, imputer_name, if_write
             df_imputed = xgboost_impute(df_missing)
         elif imputer_name == "miss_forest":
             df_imputed = miss_forest(df_missing)
+        elif imputer_name == "iim":
+            df_imputed = iim_impute(df_missing)
         else:
+            print("No impute algorithm was used.")
             df_imputed = df_missing
         df_imputed.to_csv(dataset_path[:-4] + "_missing_" + missing_column + "_" + str(missing_rate) + "_imputed_by_" + imputer_name + ".csv", index=False)
     else:
@@ -98,10 +102,10 @@ if __name__ == '__main__':
         df_last = df_missing
 
         # use imputer
-        # methods = ["mean", "front", "knn", "xgboost", "miss_forest"]
-        methods = ["xgboost"]
+        # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim"]
+        methods = ["iim"]
         for method in methods:
-            df_imputed = use_imputer(df_missing, missing_rate, "OT", method, if_write=False)
+            df_imputed = use_imputer(df_missing, missing_rate, "OT", method, if_write=True)
             # df_imputed = use_imputer(df_missing, missing_rate, "covariate", method, if_write=False)
             # df_imputed = use_imputer(df_missing, missing_rate, "all", method, if_write=False)
             show_change(df_origin, df_imputed, method)

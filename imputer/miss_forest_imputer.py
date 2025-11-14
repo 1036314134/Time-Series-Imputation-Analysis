@@ -1,5 +1,4 @@
 import time
-import numpy as np
 import pandas as pd
 from missforest import MissForest
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor

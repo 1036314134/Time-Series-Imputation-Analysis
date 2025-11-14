@@ -1,15 +1,17 @@
 import time
-from imputegap.wrapper.AlgoPython.IIM.runnerIIM import impute_with_algorithm
+import numpy as np
+import pandas as pd
+from imputer.imputegap.wrapper.AlgoPython.IIM.runnerIIM import impute_with_algorithm
 
 
-def iim(incomp_data, number_neighbor, algo_code, logs=True, verbose=True):
+def iim_impute(incomp_data, number_neighbor=5, algo_code="iim 1", logs=True, verbose=True):
     """
     Perform imputation using the Iterative Imputation Method (IIM) algorithm.
 
     Parameters
     ----------
-    incomp_data : numpy.ndarray
-        The input matrix with contamination (missing values represented as NaNs).
+    incomp_data : pandas.DataFrame
+        The input DataFrame with missing values. The first column is assumed to be a timestamp.
     number_neighbor : int
         The number of neighbors to use for the K-Nearest Neighbors (KNN) classifier (default is 10).
     algo_code : str
@@ -31,22 +33,29 @@ def iim(incomp_data, number_neighbor, algo_code, logs=True, verbose=True):
 
     The function logs the total execution time if `logs` is set to True.
 
-    Example
-    -------
-        >>> recov_data = iim(incomp_data, number_neighbor=10, algo_code="iim 2")
-        >>> print(recov_data)
-
     References
     ----------
     A. Zhang, S. Song, Y. Sun and J. Wang, "Learning Individual Models for Imputation," 2019 IEEE 35th International Conference on Data Engineering (ICDE), Macao, China, 2019, pp. 160-171, doi: 10.1109/ICDE.2019.00023.
     keywords: {Data models;Adaptation models;Computational modeling;Predictive models;Numerical models;Aggregates;Regression tree analysis;Missing values;Data imputation}
     """
-    start_time = time.time()  # Record start time
+    # 分离时间戳列
+    timestamp = incomp_data.iloc[:, 0]
+    feature_df = incomp_data.iloc[:, 1:]
+    # 转变为numpy
+    feature_np = np.array(feature_df)
 
-    recov_data = impute_with_algorithm(algo_code, incomp_data.copy(), number_neighbor, verbose=verbose)
+    start_time = time.time()
+
+    recov_features = impute_with_algorithm(algo_code, feature_np, number_neighbor, verbose=verbose)
+
+    # 恢复为 DataFrame
+    recov_features_df = pd.DataFrame(recov_features, columns=feature_df.columns, index=feature_df.index)
+
+    # 合并时间戳与填补结果
+    recov_df = pd.concat([timestamp, recov_features_df], axis=1)
 
     end_time = time.time()
     if logs and verbose:
         print(f"\n> logs: imputation iim - Execution Time: {(end_time - start_time):.4f} seconds\n")
 
-    return recov_data
+    return recov_df

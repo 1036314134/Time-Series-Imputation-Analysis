@@ -1,14 +1,14 @@
 export CUDA_VISIBLE_DEVICES=0
 
-model_name=TimesNet
+model_name=TimeXer
 
 for pred_len in 96
 do
 python -u run.py \
   --task_name long_term_forecast \
-  --is_training 0 \
+  --is_training 1 \
   --root_path ../dataset/exchange_rate/ \
-  --data_path exchange_rate.csv \
+  --data_path exchange_rate_missing_all_0.1.csv \
   --model_id Exchange_96_$pred_len \
   --model $model_name \
   --data custom \

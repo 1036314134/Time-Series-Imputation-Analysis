@@ -1,30 +1,21 @@
 import pandas as pd
-from create_missing.data_processing import introduce_missing_segments
 from dataset.draw import show_specify_line, show_change
-from imputer.cdrec_imputer import cdrec_impute
-from imputer.front_imputer import front_impute
-from imputer.gain_imputer import gain_impute
-from imputer.iim_imputer import iim_impute
-from imputer.knn_imputer import knn_impute
-from imputer.mean_imputer import mean_impute
-from imputer.miss_forest_imputer import miss_forest
-from imputer.xgboost_imputer import xgboost_impute
 
 
 def use_missing_creator(df_last, missing_rate, missing_columns, if_figure=False, if_write=True):
     """
     Inject missing values into complete data
     :param df_last: Dataframes that need to be injected with missing values
-    :param missing_rate:
-    :param missing_columns:
-    :param if_figure:
-    :param if_write:
+    :param missing_rate: Target proportion of missing data in the data
+    :param missing_columns: Create missing attribute name
+    :param if_figure: Control whether to display the attribute sequence after injection is missing
+    :param if_write: Control whether to write the results to a CSV file
     :return: df_missing: Dataframes that have missing values
     """
-    # 排除时间戳
+    # Remove timestamps
     features = df_last.shape[1] - 1
 
-    # 根据制造缺失的属性数量确定文件名字
+    # The file name is determined based on the number of missing attributes in the manufacturing process
     if len(missing_columns) == features:
         write_name = "all"
     elif len(missing_columns) == 1:
@@ -44,16 +35,17 @@ def use_missing_creator(df_last, missing_rate, missing_columns, if_figure=False,
     if if_write:
         df_missing = df_last.copy(deep=True)
         for column in missing_columns:
-            # 为每个属性写入同样的注入方式
+            # Determine the random seed based on the attribute name.
             seed = seek_random_seed(column)
-            # 写入错误
+            # Inject error
+            from create_missing.data_processing import introduce_missing_segments
             df_missing = introduce_missing_segments(df_missing, missing_rate, column, end=slice_3[0]-1, random_seed=seed)
         df_missing.to_csv(dataset_path[:-4] + "_missing_" + write_name + "_" + str(missing_rate) + ".csv", index=False)
-    # 从文件中读取数据
+    # If no data is written, then data is read from the file.
     else:
         df_missing = pd.read_csv(dataset_path[:-4] + "_missing_" + write_name + "_" + str(missing_rate) + ".csv")
 
-    # 是否展示图片
+    # whether to display the attribute sequence
     if if_figure:
         show_specify_line(df_missing, missing_columns, colour='red')
 
@@ -63,21 +55,23 @@ def use_missing_creator(df_last, missing_rate, missing_columns, if_figure=False,
 def use_imputer(df_missing, missing_rate, missing_column, imputer_name, if_write=True):
     if if_write:
         if imputer_name == "mean":
+            from imputer.mean_imputer import mean_impute
             df_imputed = mean_impute(df_missing)
         elif imputer_name == "front":
+            from imputer.front_imputer import front_impute
             df_imputed = front_impute(df_missing)
         elif imputer_name == "knn":
+            from imputer.knn_imputer import knn_impute
             df_imputed = knn_impute(df_missing)
         elif imputer_name == "xgboost":
+            from imputer.xgboost_imputer import xgboost_impute
             df_imputed = xgboost_impute(df_missing)
         elif imputer_name == "miss_forest":
+            from imputer.miss_forest_imputer import miss_forest
             df_imputed = miss_forest(df_missing)
         elif imputer_name == "iim":
+            from imputer.iim_imputer import iim_impute
             df_imputed = iim_impute(df_missing)
-        elif imputer_name == "cdrec":
-            df_imputed = cdrec_impute(df_missing)
-        elif imputer_name == "gain":
-            df_imputed = gain_impute(df_missing)
         else:
             print("No impute algorithm was used.")
             df_imputed = df_missing
@@ -124,8 +118,8 @@ if __name__ == '__main__':
         df_last = df_missing
 
         # use imputer
-        methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim"]
-        # methods = ["gain"]
+        # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim"]
+        methods = ["iim"]
         for method in methods:
             df_imputed = use_imputer(df_missing, missing_rate, "OT", method, if_write=True)
             # df_imputed = use_imputer(df_missing, missing_rate, "covariate", method, if_write=False)

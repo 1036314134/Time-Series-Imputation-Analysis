@@ -4,13 +4,25 @@ from dataset.draw import show_specify_line, show_change
 
 def use_missing_creator(df_last, missing_rate, missing_columns, if_figure=False, if_write=True):
     """
-    Inject missing values into complete data
-    :param df_last: Dataframes that need to be injected with missing values
-    :param missing_rate: Target proportion of missing data in the data
-    :param missing_columns: Create missing attribute name
-    :param if_figure: Control whether to display the attribute sequence after injection is missing
-    :param if_write: Control whether to write the results to a CSV file
-    :return: df_missing: Dataframes that have missing values
+    Inject missing values into complete data.
+
+    param:
+    ----------
+    df_last: DataFrame
+        Dataframes that need to be injected with missing values
+    missing_rate: float
+        Target proportion of missing data in the data
+    missing_columns: list
+        Create missing attribute name
+    if_figure: boolean
+        Control whether to display the attribute sequence after injection is missing
+    if_write: boolean
+        Control whether to write the results to a CSV file
+
+    return:
+    ----------
+    df_missing: DataFrame
+        Dataframes that have missing values
     """
     # Remove timestamps
     features = df_last.shape[1] - 1

@@ -4,7 +4,7 @@ from missforest import MissForest
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 
-def miss_forest(incomp_data, n_estimators=10, max_iter=3, max_features='sqrt',
+def miss_forest(incomp_data, n_estimators=10, max_iter=10, max_features='sqrt',
                           seed=42, logs=True, verbose=True):
     """
     Perform imputation using the MissForest algorithm (RandomForest-based imputation),

@@ -9,7 +9,8 @@ def introduce_missing_segments(
         column,
         min_seg_len=1,
         max_seg_len=100,
-        protect_last_n=816,
+        start=0,
+        end=-1,
         random_seed=None
 ):
     """
@@ -29,8 +30,10 @@ def introduce_missing_segments(
         每段连续缺失的最小长度
     max_seg_len : int
         每段连续缺失的最大长度
-    protect_last_n : int
-        需要保护（不参与缺失操作）的末尾元素数量
+    start : int
+        注入缺失起始位置
+    end : int
+        注入缺失结束位置
     random_seed : int or None
         随机种子，保证可重复性
 
@@ -43,11 +46,9 @@ def introduce_missing_segments(
         np.random.seed(random_seed)
 
     df_new = df.copy()
-    n_total = len(df_new)
 
-    # 保护区范围
-    protect_start_idx = n_total - protect_last_n
-    df_working = df_new.iloc[:protect_start_idx]  # 仅在这部分数据上操作
+    # 仅在这部分数据上操作
+    df_working = df_new.iloc[start:end]
 
     # 当前已有缺失数量（仅统计工作区）
     current_missing_count = df_working[column].isna().sum()
@@ -55,7 +56,7 @@ def introduce_missing_segments(
 
     # 若当前缺失已达到或超过目标，则不操作
     if current_missing_count >= target_missing_count:
-        print("当前缺失已达到或超过目标比例，无需添加。")
+        print("The current missing percentage has reached or exceeded the target percentage, so no addition is needed.")
         return df_new
 
     # 计算需要新增的缺失数量

@@ -1,5 +1,4 @@
 import pandas as pd
-
 from create_missing.data_processing import introduce_missing_segments
 from dataset.draw import show_specify_line, show_change
 from imputer.front_imputer import front_impute
@@ -10,7 +9,16 @@ from imputer.miss_forest_imputer import miss_forest
 from imputer.xgboost_imputer import xgboost_impute
 
 
-def use_missing_creator(df_last, missing_rate, missing_columns, if_figure, if_write=True):
+def use_missing_creator(df_last, missing_rate, missing_columns, if_figure=False, if_write=True):
+    """
+    Inject missing values into complete data
+    :param df_last: Dataframes that need to be injected with missing values
+    :param missing_rate:
+    :param missing_columns:
+    :param if_figure:
+    :param if_write:
+    :return: df_missing: Dataframes that have missing values
+    """
     # 排除时间戳
     features = df_last.shape[1] - 1
 
@@ -22,14 +30,22 @@ def use_missing_creator(df_last, missing_rate, missing_columns, if_figure, if_wr
     else:
         write_name = "covariate"
 
-    # 确认是否将缺失值写入文件
+    # Calculate dataset size and partition position
+    num_train = int(len(df_last) * 0.7) # Training set size
+    num_test = int(len(df_last) * 0.2) # Validation set size
+    num_val = len(df_last) - num_train - num_test # Test set size
+    slice_1 = [0, num_train] # Training set range
+    slice_2 = [num_train - 96, num_train + num_val] # Validation set range
+    slice_3 = [len(df_last) - num_test - 96, len(df_last)] # Test set range
+
+    # Confirm whether to write missing values to the file.
     if if_write:
         df_missing = df_last.copy(deep=True)
         for column in missing_columns:
             # 为每个属性写入同样的注入方式
             seed = seek_random_seed(column)
             # 写入错误
-            df_missing = introduce_missing_segments(df_missing, missing_rate, column, random_seed=seed)
+            df_missing = introduce_missing_segments(df_missing, missing_rate, column, end=slice_3[0]-1, random_seed=seed)
         df_missing.to_csv(dataset_path[:-4] + "_missing_" + write_name + "_" + str(missing_rate) + ".csv", index=False)
     # 从文件中读取数据
     else:
@@ -67,7 +83,9 @@ def use_imputer(df_missing, missing_rate, missing_column, imputer_name, if_write
 
 
 def seek_random_seed(column):
-    if column == "1":
+    if column == "OT":
+        return 5
+    elif column == "1":
         return 10
     elif column == "2":
         return 20
@@ -79,8 +97,6 @@ def seek_random_seed(column):
         return 50
     elif column == "6":
         return 60
-    elif column == "OT":
-        return 70
     else:
         return 0
 
@@ -96,16 +112,16 @@ if __name__ == '__main__':
     for  missing_rate in missing_rate_list:
         print(missing_rate)
         # create missing values
-        df_missing = use_missing_creator(df_last, missing_rate, ["OT"], False, if_write=False)
-        # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6"], False, if_write=False)
-        # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6", "OT"], False, if_write=False)
+        df_missing = use_missing_creator(df_last, missing_rate, ["OT"], if_figure=False, if_write=False)
+        # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6"], if_figure=False, if_write=False)
+        # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6", "OT"], if_figure=False, if_write=False)
         df_last = df_missing
 
         # use imputer
-        methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim"]
-        # methods = ["iim"]
+        # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim"]
+        methods = ["miss_forest"]
         for method in methods:
-            df_imputed = use_imputer(df_missing, missing_rate, "OT", method, if_write=False)
+            df_imputed = use_imputer(df_missing, missing_rate, "OT", method, if_write=True)
             # df_imputed = use_imputer(df_missing, missing_rate, "covariate", method, if_write=False)
             # df_imputed = use_imputer(df_missing, missing_rate, "all", method, if_write=False)
             show_change(df_origin, df_imputed, method)

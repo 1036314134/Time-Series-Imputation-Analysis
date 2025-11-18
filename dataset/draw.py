@@ -13,7 +13,6 @@ def show_specify_line(df, columns, colour="green"):
         plt.figure(figsize=(10, 6))
         plt.plot(df.index, df[column], linestyle='-', color=colour)
         plt.title(f'{column}')
-        plt.legend()
         plt.grid(False)
 
     plt.show()

@@ -119,7 +119,7 @@ if __name__ == '__main__':
 
         # use imputer
         # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim"]
-        methods = ["miss_forest"]
+        methods = ["iim"]
         for method in methods:
             df_imputed = use_imputer(df_missing, missing_rate, "OT", method, if_write=True)
             # df_imputed = use_imputer(df_missing, missing_rate, "covariate", method, if_write=False)

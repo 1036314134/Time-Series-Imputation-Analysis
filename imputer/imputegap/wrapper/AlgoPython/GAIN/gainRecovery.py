@@ -23,9 +23,9 @@ import warnings
 
 import numpy as np
 
-from imputegap.recovery.manager import TimeSeries
-from imputegap.tools import utils
-from imputegap.wrapper.AlgoPython.GAIN.gain import gain
+from imputer.imputegap.recovery.manager import TimeSeries
+from imputer.imputegap.tools import utils
+from imputer.imputegap.wrapper.AlgoPython.GAIN.gain import gain
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 

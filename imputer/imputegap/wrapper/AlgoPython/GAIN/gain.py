@@ -23,10 +23,9 @@ Contact: jsyoon0823@gmail.com
 import tensorflow.compat.v1 as tf
 
 import numpy as np
-
-from imputegap.wrapper.AlgoPython.GAIN.utils import normalization, renormalization, rounding
-from imputegap.wrapper.AlgoPython.GAIN.utils import xavier_init
-from imputegap.wrapper.AlgoPython.GAIN.utils import binary_sampler, uniform_sampler, sample_batch_index
+from imputer.imputegap.wrapper.AlgoPython.GAIN.utils import normalization, renormalization, rounding
+from imputer.imputegap.wrapper.AlgoPython.GAIN.utils import xavier_init
+from imputer.imputegap.wrapper.AlgoPython.GAIN.utils import binary_sampler, uniform_sampler, sample_batch_index
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 tf.disable_v2_behavior()

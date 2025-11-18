@@ -462,8 +462,8 @@ def config_impute_algorithm(incomp_data, algorithm, verbose=True):
         Configured imputer instance with optimal parameters.
     """
 
-    from imputegap.recovery.imputation import Imputation
-    from imputegap.recovery.manager import TimeSeries
+    from imputer.imputegap.recovery.imputation import Imputation
+    from imputer.imputegap.recovery.manager import TimeSeries
 
     alg_low = algorithm.lower()
     alg = alg_low.replace('_', '').replace('-', '')
@@ -862,7 +862,7 @@ def config_contamination(ts, pattern, dataset_rate=0.4, series_rate=0.4, block_s
         TimeSeries object containing contaminated data.
     """
 
-    from imputegap.recovery.manager import TimeSeries
+    from imputer.imputegap.recovery.manager import TimeSeries
 
     pattern_low = pattern.lower()
     ptn = pattern_low.replace('_', '').replace('-', '')
@@ -907,7 +907,7 @@ def config_forecaster(model, params):
             Forecaster object for downstream analytics
         """
 
-        from imputegap.recovery.manager import TimeSeries
+        from imputer.imputegap.recovery.manager import TimeSeries
 
         model_low = model.lower()
         mdl = model_low.replace('_', '').replace('-', '')
@@ -1684,7 +1684,7 @@ def load_share_lib(name="lib_cdrec", lib=True, verbose=True):
         ext = ".so"
 
     if lib:
-        lib_path = importlib.resources.files('imputegap.algorithms.lib').joinpath("./" + str(name) + ext)
+        lib_path = importlib.resources.files('imputer.imputegap.algorithms.lib').joinpath("./" + str(name) + ext)
     else:
         local_path_lin = './algorithms/lib/' + name + ext
 
@@ -1696,8 +1696,8 @@ def load_share_lib(name="lib_cdrec", lib=True, verbose=True):
     if verbose:
         print("\n(SYS) Wrapper files loaded for C++ : ", lib_path, "\n")
 
-    return ctypes.CDLL(lib_path)
-
+    print(str(lib_path))
+    return ctypes.CDLL(str(lib_path))
 
 
 def list_of_algorithms():
@@ -1870,4 +1870,3 @@ def list_of_algorithms_with_families():
 
 def list_of_normalizers():
     return ["z_score", "min_max"]
-

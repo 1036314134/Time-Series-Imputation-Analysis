@@ -1,3 +1,4 @@
+darts==0.38.0
 einops==0.8.0
 lightgbm==4.6.0
 local-attention==1.9.14
@@ -15,5 +16,6 @@ scipy==1.15.3
 sktime==0.39.0
 sympy==1.14.0
 torch==2.8.0+cu129
+toml==0.10.2
 tqdm==4.64.1
 xgboost==2.0.3

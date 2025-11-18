@@ -1,7 +1,9 @@
 import pandas as pd
 from create_missing.data_processing import introduce_missing_segments
 from dataset.draw import show_specify_line, show_change
+from imputer.cdrec_imputer import cdrec_impute
 from imputer.front_imputer import front_impute
+from imputer.gain_imputer import gain_impute
 from imputer.iim_imputer import iim_impute
 from imputer.knn_imputer import knn_impute
 from imputer.mean_imputer import mean_impute
@@ -72,6 +74,10 @@ def use_imputer(df_missing, missing_rate, missing_column, imputer_name, if_write
             df_imputed = miss_forest(df_missing)
         elif imputer_name == "iim":
             df_imputed = iim_impute(df_missing)
+        elif imputer_name == "cdrec":
+            df_imputed = cdrec_impute(df_missing)
+        elif imputer_name == "gain":
+            df_imputed = gain_impute(df_missing)
         else:
             print("No impute algorithm was used.")
             df_imputed = df_missing
@@ -118,8 +124,8 @@ if __name__ == '__main__':
         df_last = df_missing
 
         # use imputer
-        # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim"]
-        methods = ["iim"]
+        methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim"]
+        # methods = ["gain"]
         for method in methods:
             df_imputed = use_imputer(df_missing, missing_rate, "OT", method, if_write=True)
             # df_imputed = use_imputer(df_missing, missing_rate, "covariate", method, if_write=False)

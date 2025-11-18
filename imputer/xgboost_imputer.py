@@ -2,7 +2,7 @@ import pandas as pd
 from xgboost import XGBRegressor
 
 
-def xgboost_impute(df_missing: pd.DataFrame, n_estimators=10, seed=42) -> pd.DataFrame:
+def xgboost_impute(df_missing, n_estimators=10, seed=42):
     # 拷贝避免修改原始数据
     df_copy = df_missing.copy(deep=True)
 

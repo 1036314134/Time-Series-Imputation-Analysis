@@ -5,7 +5,7 @@ import pandas as pd
 
 def trmf_impute(
         incomp_data,
-        lags,
+        lags=[],
         K=-1,
         lambda_f=1.0,
         lambda_x=1.0,
@@ -20,7 +20,7 @@ def trmf_impute(
 
     Parameters
     ----------
-    incomp_data : numpy.ndarray
+    incomp_data : pandas.Dataframe
         The input matrix with contamination (missing values represented as NaNs).
     lags : array-like, optional
         Set of lag indices to use in model.
@@ -55,11 +55,6 @@ def trmf_impute(
 
     This function logs the total execution time if `logs` is set to True.
 
-    Example
-    -------
-        >>> recov_data = trmf_impute(incomp_data, lags=[], K=-1, lambda_f=1.0, lambda_x=1.0, lambda_w=1.0, eta=1.0, alpha=1000.0, max_iter=100)
-        >>> print(recov_data)
-
     References
     ----------
     H.-F. Yu, N. Rao, and I. S. Dhillon, "Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction," in *Advances in Neural Information Processing Systems*, vol. 29, 2016. [Online]. Available: https://proceedings.neurips.cc/paper_files/paper/2016/file/85422afb467e9456013a2a51d4dff702-Paper.pdf
@@ -68,17 +63,17 @@ def trmf_impute(
 
     df_copy = incomp_data.copy()
 
-    # 分离时间戳列
     timestamp_col = df_copy.iloc[:, 0]
     features_df = df_copy.iloc[:, 1:]
     features_array = np.array(features_df)
 
     imputed_array = recoveryTRMF(data=features_array, lags=lags, K=K, lambda_f=lambda_f, lambda_x=lambda_x, lambda_w=lambda_w, eta=eta, alpha=alpha, max_iter=max_iter)
 
-    # 转回DataFrame并恢复列名
+    # assert not np.isnan(imputed_array).any(), "Input contains NaN"
+    # assert not np.isinf(imputed_array).any(), "Input contains Inf"
+
     imputed_df = pd.DataFrame(imputed_array, columns=features_df.columns, index=df_copy.index)
 
-    # 合并回时间戳列
     result_df = pd.concat([timestamp_col, imputed_df], axis=1)
 
     end_time = time.time()
@@ -119,8 +114,6 @@ def recoveryTRMF(data, lags=[], K=-1, lambda_f=1.0, lambda_x=1.0, lambda_w=1.0, 
     numpy.ndarray
         The imputed matrix with missing values recovered.
     """
-
-
     if not lags:
         lags = list(range(1, 11))
 
@@ -154,55 +147,39 @@ class trmf:
 
     Parameters
     ----------
-
     lags : array-like, shape (n_lags,)
         Set of lag indices to use in model.
-
     K : int
         Length of latent embedding dimension
-
     lambda_f : float
         Regularization parameter used for matrix F.
-
     lambda_x : float
         Regularization parameter used for matrix X.
-
     lambda_w : float
         Regularization parameter used for matrix W.
-
     alpha : float
         Regularization parameter used for make the sum of lag coefficient close to 1.
         That helps to avoid big deviations when forecasting.
-
     eta : float
         Regularization parameter used for X when undercovering autoregressive dependencies.
-
     max_iter : int
         Number of iterations of updating matrices F, X and W.
-
     F_step : float
         Step of gradient descent when updating matrix F.
-
     X_step : float
         Step of gradient descent when updating matrix X.
-
     W_step : float
         Step of gradient descent when updating matrix W.
 
-
     Attributes
     ----------
-
     F : ndarray, shape (n_timeseries, K)
         Latent embedding of timeseries.
-
     X : ndarray, shape (K, n_timepoints)
         Latent embedding of timepoints.
-
     W : ndarray, shape (K, n_lags)
         Matrix of autoregressive coefficients.
     """
-
     def __init__(self, lags, K, lambda_f, lambda_x, lambda_w, alpha, eta, max_iter=1000,
                  F_step=0.0001, X_step=0.0001, W_step=0.0001):
         self.lags = lags
@@ -236,7 +213,6 @@ class trmf:
         ----------
         train : ndarray, shape (n_timeseries, n_timepoints)
             Training data.
-
         resume : bool
             Used to continue fitting.
 
@@ -245,12 +221,13 @@ class trmf:
         self : object
             Returns self.
         """
-
         if not resume:
             self.Y = train
             mask = np.array((~np.isnan(self.Y)).astype(int))
             self.mask = mask
             self.Y[self.mask == 0] = 0.
+            assert not np.isnan(self.Y).any(), "Input contains NaN"
+            assert not np.isinf(self.Y).any(), "Input contains Inf"
             self.N, self.T = self.Y.shape
             self.W = np.random.randn(self.K, self.L) / self.L
             self.F = np.random.randn(self.N, self.K)
@@ -277,7 +254,6 @@ class trmf:
         preds : ndarray, shape (n_timeseries, T)
             Predictions.
         """
-
         X_preds = self._predict_X(h)
         return np.dot(self.F, X_preds)
 
@@ -296,7 +272,6 @@ class trmf:
         X_preds : ndarray, shape (self.K, h)
             Predictions of timepoints latent embeddings.
         """
-
         X_preds = np.zeros((self.K, h))
         X_adjusted = np.hstack([self.X, X_preds])
         for t in range(self.T, self.T + h):
@@ -320,6 +295,7 @@ class trmf:
         """
         data = self.Y
         data[self.mask == 0] = np.dot(self.F, self.X)[self.mask == 0]
+
         return data
 
     def _update_F(self, step, n_iter=1):
@@ -331,7 +307,6 @@ class trmf:
         ----------
         step : float
             Step of gradient descent when updating matrix.
-
         n_iter : int
             Number of gradient steps to be made.
 
@@ -340,7 +315,6 @@ class trmf:
         self : objects
             Returns self.
         """
-
         for _ in range(n_iter):
             self.F -= step * self._grad_F()
 
@@ -353,7 +327,6 @@ class trmf:
         ----------
         step : float
             Step of gradient descent when updating matrix.
-
         n_iter : int
             Number of gradient steps to be made.
 
@@ -362,7 +335,6 @@ class trmf:
         self : objects
             Returns self.
         """
-
         for _ in range(n_iter):
             self.X -= step * self._grad_X()
 
@@ -375,7 +347,6 @@ class trmf:
         ----------
         step : float
             Step of gradient descent when updating matrix.
-
         n_iter : int
             Number of gradient steps to be made.
 
@@ -401,7 +372,6 @@ class trmf:
         self : objects
             Returns self.
         """
-
         return - 2 * np.dot((self.Y - np.dot(self.F, self.X)) * self.mask, self.X.T) + 2 * self.lambda_f * self.F
 
     def _grad_X(self):

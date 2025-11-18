@@ -1,6 +1,6 @@
 import pandas as pd
 
-def front_impute(missing_set: pd.DataFrame) -> pd.DataFrame:
+def front_impute(missing_set):
     imputed_set = missing_set.copy()
     n_features = imputed_set.shape[1] - 1
 

@@ -86,7 +86,7 @@ def use_imputer(df_missing, missing_rate, missing_column, imputer_name, if_write
             df_imputed = iim_impute(df_missing)
         elif imputer_name == "trmf":
             from imputer.trmf_imputer import trmf_impute
-            df_imputed = trmf_impute(df_missing, lags=[])
+            df_imputed = trmf_impute(df_missing)
         else:
             print("No impute algorithm was used.")
             df_imputed = df_missing

@@ -1,6 +1,6 @@
 import pandas as pd
 
-def mean_impute(missing_set: pd.DataFrame) -> pd.DataFrame:
+def mean_impute(missing_set):
     imputed_set = missing_set.copy(deep=True)
     n_features = imputed_set.shape[1] - 1
 

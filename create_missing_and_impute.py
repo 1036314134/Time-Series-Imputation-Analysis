@@ -84,6 +84,9 @@ def use_imputer(df_missing, missing_rate, missing_column, imputer_name, if_write
         elif imputer_name == "iim":
             from imputer.iim_imputer import iim_impute
             df_imputed = iim_impute(df_missing)
+        elif imputer_name == "trmf":
+            from imputer.trmf_imputer import trmf_impute
+            df_imputed = trmf_impute(df_missing, lags=[])
         else:
             print("No impute algorithm was used.")
             df_imputed = df_missing
@@ -131,7 +134,7 @@ if __name__ == '__main__':
 
         # use imputer
         # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim"]
-        methods = ["iim"]
+        methods = ["trmf"]
         for method in methods:
             df_imputed = use_imputer(df_missing, missing_rate, "OT", method, if_write=True)
             # df_imputed = use_imputer(df_missing, missing_rate, "covariate", method, if_write=False)

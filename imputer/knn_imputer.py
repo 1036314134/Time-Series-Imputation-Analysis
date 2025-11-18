@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.impute import KNNImputer
 
-def knn_impute(df_missing: pd.DataFrame, n_neighbors: int = 5) -> pd.DataFrame:
+def knn_impute(df_missing, n_neighbors=5):
     """
     使用KNN对DataFrame中的缺失值进行填补。
     参数

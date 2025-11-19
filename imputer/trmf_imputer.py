@@ -1,26 +1,14 @@
 import time
 import numpy as np
-import pandas as pd
 
 
-def trmf_impute(
-        incomp_data,
-        lags=[],
-        K=-1,
-        lambda_f=1,
-        lambda_x=1,
-        lambda_w=1,
-        eta=1.0,
-        alpha=1000.0,
-        max_iter=100,
-        logs=True,
-        verbose=True):
+def trmf_impute(incomp_data, lags=[], K=-1, lambda_f=0.1, lambda_x=0.1, lambda_w=0.1, eta=0.1, alpha=1000, max_iter=100, logs=True, verbose=True):
     """
     Perform imputation using the Temporal Regularized Matrix Factorization (TRMF) algorithm.
 
     Parameters
     ----------
-    incomp_data : pandas.Dataframe
+    incomp_data : numpy.ndarray
         The input matrix with contamination (missing values represented as NaNs).
     lags : array-like, optional
         Set of lag indices to use in model.
@@ -55,34 +43,24 @@ def trmf_impute(
 
     This function logs the total execution time if `logs` is set to True.
 
+    Example
+    -------
+        >>> recov_data = trmf(incomp_data, lags=[], K=-1, lambda_f=1.0, lambda_x=1.0, lambda_w=1.0, eta=1.0, alpha=1000.0, max_iter=100)
+        >>> print(recov_data)
+
     References
     ----------
     H.-F. Yu, N. Rao, and I. S. Dhillon, "Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction," in *Advances in Neural Information Processing Systems*, vol. 29, 2016. [Online]. Available: https://proceedings.neurips.cc/paper_files/paper/2016/file/85422afb467e9456013a2a51d4dff702-Paper.pdf
     """
     start_time = time.time()  # Record start time
 
-    df_copy = incomp_data.copy()
-
-    timestamp_col = df_copy.iloc[:, 0]
-    features_df = df_copy.iloc[:, 1:]
-    features_array = np.array(features_df)
-
-    features_array_T = features_array.T
-
-    imputed_array_T = recoveryTRMF(data=features_array_T, lags=lags, K=K, lambda_f=lambda_f, lambda_x=lambda_x, lambda_w=lambda_w, eta=eta, alpha=alpha, max_iter=max_iter)
-
-    imputed_array = imputed_array_T.T
-
-    imputed_df = pd.DataFrame(imputed_array, columns=features_df.columns, index=df_copy.index)
-
-    result_df = pd.concat([timestamp_col, imputed_df], axis=1)
+    recov_data = recoveryTRMF(data=incomp_data, lags=lags, K=K, lambda_f=lambda_f, lambda_x=lambda_x, lambda_w=lambda_w, eta=eta, alpha=alpha, max_iter=max_iter)
 
     end_time = time.time()
-
     if logs and verbose:
         print(f"\n> logs: imputation trmf - Execution Time: {(end_time - start_time):.4f} seconds\n")
 
-    return result_df
+    return recov_data
 
 
 def recoveryTRMF(data, lags=[], K=-1, lambda_f=1.0, lambda_x=1.0, lambda_w=1.0, eta=1.0, alpha=1000.0, max_iter=100):
@@ -182,7 +160,7 @@ class trmf:
         Matrix of autoregressive coefficients.
     """
     def __init__(self, lags, K, lambda_f, lambda_x, lambda_w, alpha, eta, max_iter=1000,
-                 F_step=0.0001, X_step=0.0001, W_step=0.0001):
+                 F_step=0.00001, X_step=0.00001, W_step=0.00001):
         self.lags = lags
         self.L = len(lags)
         self.K = K

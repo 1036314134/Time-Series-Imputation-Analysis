@@ -1,4 +1,5 @@
 import pandas as pd
+from data_processing.data_loader import My_Data
 from dataset.draw import show_specify_line, show_change
 
 
@@ -50,7 +51,7 @@ def use_missing_creator(df_last, missing_rate, missing_columns, if_figure=False,
             # Determine the random seed based on the attribute name.
             seed = seek_random_seed(column)
             # Inject error
-            from create_missing.data_processing import introduce_missing_segments
+            from data_processing.create_missing import introduce_missing_segments
             df_missing = introduce_missing_segments(df_missing, missing_rate, column, end=slice_3[0]-1, random_seed=seed)
         df_missing.to_csv(dataset_path[:-4] + "_missing_" + write_name + "_" + str(missing_rate) + ".csv", index=False)
     # If no data is written, then data is read from the file.
@@ -64,37 +65,38 @@ def use_missing_creator(df_last, missing_rate, missing_columns, if_figure=False,
     return df_missing
 
 
-def use_imputer(df_missing, missing_rate, missing_column, imputer_name, if_write=True):
+def use_imputer(data, missing_rate, missing_column, imputer_name, if_write=True):
     if if_write:
         if imputer_name == "mean":
             from imputer.mean_imputer import mean_impute
-            df_imputed = mean_impute(df_missing)
+            data.imputed_feature_df = mean_impute(data.raw_feature_df)
         elif imputer_name == "front":
             from imputer.front_imputer import front_impute
-            df_imputed = front_impute(df_missing)
+            data.imputed_feature_df = front_impute(data.raw_feature_df)
         elif imputer_name == "knn":
             from imputer.knn_imputer import knn_impute
-            df_imputed = knn_impute(df_missing)
+            data.imputed_feature_array = knn_impute(data.raw_feature_df)
         elif imputer_name == "xgboost":
             from imputer.xgboost_imputer import xgboost_impute
-            df_imputed = xgboost_impute(df_missing)
+            data.imputed_feature_array = xgboost_impute(data.raw_feature_array)
         elif imputer_name == "miss_forest":
-            from imputer.miss_forest_imputer import miss_forest
-            df_imputed = miss_forest(df_missing)
+            from imputer.miss_forest_imputer import miss_forest_impute
+            data.imputed_feature_array = miss_forest_impute(data.raw_feature_array)
         elif imputer_name == "iim":
             from imputer.iim_imputer import iim_impute
-            df_imputed = iim_impute(df_missing)
+            data.imputed_feature_array = iim_impute(data.raw_feature_array.T).T
         elif imputer_name == "trmf":
             from imputer.trmf_imputer import trmf_impute
-            df_imputed = trmf_impute(df_missing)
+            data.imputed_feature_array = trmf_impute(data.raw_feature_array.T).T
         else:
             print("No impute algorithm was used.")
-            df_imputed = df_missing
-        df_imputed.to_csv(dataset_path[:-4] + "_missing_" + missing_column + "_" + str(missing_rate) + "_imputed_by_" + imputer_name + ".csv", index=False)
+            data.imputed_data_df = data.raw_data_df
+        data.change_feature_to_df()
+        data.imputed_data_df.to_csv(dataset_path[:-4] + "_missing_" + missing_column + "_" + str(missing_rate) + "_imputed_by_" + imputer_name + ".csv", index=False)
     else:
-        df_imputed = pd.read_csv(dataset_path[:-4] + "_missing_" + missing_column + "_" + str(missing_rate) + "_imputed_by_" + imputer_name + ".csv")
+        data.imputed_data_df = pd.read_csv(dataset_path[:-4] + "_missing_" + missing_column + "_" + str(missing_rate) + "_imputed_by_" + imputer_name + ".csv")
 
-    return df_imputed
+    return data.imputed_data_df
 
 
 def seek_random_seed(column):
@@ -122,21 +124,22 @@ if __name__ == '__main__':
     # show_specify_line(df_origin, ['OT'])
     df_last = df_origin
 
-    # missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
-    missing_rate_list = [0.1, 0.2, 0.3, 0.4]
+    missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
+    # missing_rate_list = [0.1]
     for  missing_rate in missing_rate_list:
         print(missing_rate)
-        # create missing values
+        # ==== create missing values ====
         df_missing = use_missing_creator(df_last, missing_rate, ["OT"], if_figure=False, if_write=False)
         # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6"], if_figure=False, if_write=False)
         # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6", "OT"], if_figure=False, if_write=False)
         df_last = df_missing
 
-        # use imputer
+        # ==== use imputer ====
         # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim", "trmf"]
-        methods = ["iim"]
+        methods = ["trmf"]
         for method in methods:
-            df_imputed = use_imputer(df_missing, missing_rate, "OT", method, if_write=True)
-            # df_imputed = use_imputer(df_missing, missing_rate, "covariate", method, if_write=False)
-            # df_imputed = use_imputer(df_missing, missing_rate, "all", method, if_write=False)
+            data = My_Data(df_missing)
+            df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=True)
+            # df_imputed = use_imputer(data, missing_rate, "covariate", method, if_write=False)
+            # df_imputed = use_imputer(data, missing_rate, "all", method, if_write=False)
             show_change(df_origin, df_imputed, method)

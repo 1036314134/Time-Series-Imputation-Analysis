@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from create_missing.data_processing import introduce_missing_segments
+from data_processing.create_missing import introduce_missing_segments
 from imputer.trmf_imputer import trmf_impute
 
 if __name__ == "__main__":

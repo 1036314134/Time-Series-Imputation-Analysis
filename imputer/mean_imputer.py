@@ -1,11 +1,9 @@
-import pandas as pd
-
-def mean_impute(missing_set):
-    imputed_set = missing_set.copy(deep=True)
-    n_features = imputed_set.shape[1] - 1
+def mean_impute(raw_feature_df):
+    imputed_feature_df = raw_feature_df.copy()
+    n_features = imputed_feature_df.shape[1]
 
     for i in range(n_features):
-        impute_value = imputed_set.iloc[:, i + 1].mean()
-        imputed_set.iloc[:, i + 1] = imputed_set.iloc[:, i + 1].fillna(impute_value)
+        impute_value = imputed_feature_df.iloc[:, i].mean()
+        imputed_feature_df.iloc[:, i] = imputed_feature_df.iloc[:, i].fillna(impute_value)
 
-    return imputed_set
+    return imputed_feature_df

@@ -123,7 +123,7 @@ if __name__ == '__main__':
     df_last = df_origin
 
     # missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
-    missing_rate_list = [0.5]
+    missing_rate_list = [0.1, 0.2, 0.3, 0.4]
     for  missing_rate in missing_rate_list:
         print(missing_rate)
         # create missing values

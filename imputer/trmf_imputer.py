@@ -7,9 +7,9 @@ def trmf_impute(
         incomp_data,
         lags=[],
         K=-1,
-        lambda_f=1.0,
-        lambda_x=1.0,
-        lambda_w=1.0,
+        lambda_f=1,
+        lambda_x=1,
+        lambda_w=1,
         eta=1.0,
         alpha=1000.0,
         max_iter=100,
@@ -67,10 +67,11 @@ def trmf_impute(
     features_df = df_copy.iloc[:, 1:]
     features_array = np.array(features_df)
 
-    imputed_array = recoveryTRMF(data=features_array, lags=lags, K=K, lambda_f=lambda_f, lambda_x=lambda_x, lambda_w=lambda_w, eta=eta, alpha=alpha, max_iter=max_iter)
+    features_array_T = features_array.T
 
-    # assert not np.isnan(imputed_array).any(), "Input contains NaN"
-    # assert not np.isinf(imputed_array).any(), "Input contains Inf"
+    imputed_array_T = recoveryTRMF(data=features_array_T, lags=lags, K=K, lambda_f=lambda_f, lambda_x=lambda_x, lambda_w=lambda_w, eta=eta, alpha=alpha, max_iter=max_iter)
+
+    imputed_array = imputed_array_T.T
 
     imputed_df = pd.DataFrame(imputed_array, columns=features_df.columns, index=df_copy.index)
 
@@ -127,7 +128,7 @@ def recoveryTRMF(data, lags=[], K=-1, lambda_f=1.0, lambda_x=1.0, lambda_w=1.0, 
 
     incomp_data = np.copy(data)  # Copy data to avoid modifying original
 
-    model = trmf(lags, K, lambda_f, lambda_x, lambda_w, alpha, eta, max_iter)
+    model = trmf(lags, K, lambda_f, lambda_x, lambda_w, alpha, eta, max_iter, F_step=1e-6, X_step=1e-6, W_step=1e-6)
     model.fit(incomp_data)
     data_imputed = model.impute_missings()
     data_imputed = np.array(data_imputed)

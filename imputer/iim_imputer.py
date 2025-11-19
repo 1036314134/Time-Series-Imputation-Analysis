@@ -47,17 +47,21 @@ def iim_impute(incomp_data, number_neighbor=5, algo_code="iim 1", logs=True, ver
     timestamp = incomp_data.iloc[:, 0]
     feature_df = incomp_data.iloc[:, 1:]
     # 转变为numpy
-    feature_np = np.array(feature_df)
+    feature_array = np.array(feature_df)
+
+    feature_array_T = feature_array.T
 
     start_time = time.time()
 
-    recov_features = impute_with_algorithm(algo_code, feature_np, number_neighbor, verbose=verbose)
+    imputed_array_T = impute_with_algorithm(algo_code, feature_array_T, number_neighbor, verbose=verbose)
+
+    imputed_array = imputed_array_T.T
 
     # 恢复为 DataFrame
-    recov_features_df = pd.DataFrame(recov_features, columns=feature_df.columns, index=feature_df.index)
+    imputed_df = pd.DataFrame(imputed_array, columns=feature_df.columns, index=feature_df.index)
 
     # 合并时间戳与填补结果
-    recov_df = pd.concat([timestamp, recov_features_df], axis=1)
+    recov_df = pd.concat([timestamp, imputed_df], axis=1)
 
     end_time = time.time()
     if logs and verbose:

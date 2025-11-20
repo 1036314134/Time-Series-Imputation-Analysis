@@ -88,6 +88,9 @@ def use_imputer(data, missing_rate, missing_column, imputer_name, if_write=True)
         elif imputer_name == "trmf":
             from imputer.trmf_imputer import trmf_impute
             data.imputed_feature_array = trmf_impute(data.raw_feature_array.T).T
+        elif imputer_name == "miss_net":
+            from imputer.miss_net_imputer import miss_net_impute
+            data.imputed_feature_array = miss_net_impute(data.raw_feature_array.T).T
         else:
             print("No impute algorithm was used.")
             data.imputed_data_df = data.raw_data_df
@@ -124,8 +127,8 @@ if __name__ == '__main__':
     # show_specify_line(df_origin, ['OT'])
     df_last = df_origin
 
-    missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
-    # missing_rate_list = [0.1]
+    # missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
+    missing_rate_list = [0.1]
     for  missing_rate in missing_rate_list:
         print(missing_rate)
         # ==== create missing values ====
@@ -136,7 +139,7 @@ if __name__ == '__main__':
 
         # ==== use imputer ====
         # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim", "trmf"]
-        methods = ["trmf"]
+        methods = ["miss_net"]
         for method in methods:
             data = My_Data(df_missing)
             df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=True)

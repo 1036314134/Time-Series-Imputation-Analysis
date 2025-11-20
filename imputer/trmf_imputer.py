@@ -159,7 +159,7 @@ class trmf:
     W : ndarray, shape (K, n_lags)
         Matrix of autoregressive coefficients.
     """
-    def __init__(self, lags, K, lambda_f, lambda_x, lambda_w, alpha, eta, max_iter=1000,
+    def __init__(self, lags, K, lambda_f, lambda_x, lambda_w, alpha, eta, max_iter,
                  F_step=0.00001, X_step=0.00001, W_step=0.00001):
         self.lags = lags
         self.L = len(lags)

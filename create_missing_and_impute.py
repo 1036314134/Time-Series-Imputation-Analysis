@@ -84,10 +84,14 @@ def use_imputer(data, missing_rate, missing_column, imputer_name, if_write=True)
             data.imputed_feature_array = miss_forest_impute(data.raw_feature_array)
         elif imputer_name == "iim":
             from imputer.iim_imputer import iim_impute
+            data.normalize(normalizer="min_max")
             data.imputed_feature_array = iim_impute(data.raw_feature_array.T).T
+            data.denormalize()
         elif imputer_name == "trmf":
             from imputer.trmf_imputer import trmf_impute
+            data.normalize(normalizer="min_max")
             data.imputed_feature_array = trmf_impute(data.raw_feature_array.T).T
+            data.denormalize()
         elif imputer_name == "miss_net":
             from imputer.miss_net_imputer import miss_net_impute
             data.imputed_feature_array = miss_net_impute(data.raw_feature_array.T).T
@@ -139,7 +143,7 @@ if __name__ == '__main__':
 
         # ==== use imputer ====
         # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim", "trmf"]
-        methods = ["miss_net"]
+        methods = ["iim"]
         for method in methods:
             data = My_Data(df_missing)
             df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=True)

@@ -126,24 +126,25 @@ def seek_random_seed(column):
 
 
 if __name__ == '__main__':
-    dataset_path = 'dataset/exchange_rate/exchange_rate.csv'
+    # dataset_path = 'dataset/exchange_rate/exchange_rate.csv'
+    dataset_path = 'dataset/ETT-small/ETTh1.csv'
     df_origin = pd.read_csv(dataset_path)
     # show_specify_line(df_origin, ['OT'])
     df_last = df_origin
 
-    # missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
-    missing_rate_list = [0.1]
+    missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
+    # missing_rate_list = [0.1]
     for  missing_rate in missing_rate_list:
         print(missing_rate)
         # ==== create missing values ====
-        df_missing = use_missing_creator(df_last, missing_rate, ["OT"], if_figure=False, if_write=False)
+        df_missing = use_missing_creator(df_last, missing_rate, ["OT"], if_figure=True, if_write=True)
         # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6"], if_figure=False, if_write=False)
         # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6", "OT"], if_figure=False, if_write=False)
         df_last = df_missing
 
         # ==== use imputer ====
         # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim", "trmf"]
-        methods = ["iim"]
+        methods = ["mean", "front", "knn", "xgboost"]
         for method in methods:
             data = My_Data(df_missing)
             df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=True)

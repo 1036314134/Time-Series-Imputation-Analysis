@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # 尝试加载常见中文字体
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Heiti TC', 'Arial Unicode MS']
@@ -65,8 +66,7 @@ def show_pred_result(pred_truth, forecast_series, method, column):
     plt.legend()
     plt.show()
 
-    
-
-
-
-
+if __name__ == '__main__':
+    dataset_path = '../dataset/exchange_rate/test301-600.csv'
+    df_origin = pd.read_csv(dataset_path)
+    show_specify_line(df_origin, ['OT'], colour='blue')

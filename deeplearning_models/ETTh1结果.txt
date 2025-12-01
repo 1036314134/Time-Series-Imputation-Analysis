@@ -58,3 +58,22 @@ mse:0.4284093379974365, mae:0.4470345973968506, dtw:Not calculated
 long_term_forecast_ETTh1_rate_missing_OT_0.5_imputed_by_front_TimesNet_ETTh1_ftM_sl96_ll48_pl96_dm16_nh8_el2_dl1_df32_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
 mse:0.38558414578437805, mae:0.40745818614959717, dtw:Not calculated
 
+long_term_forecast_ETTh1_TimesNet_ETTh1_ftM_sl96_ll48_pl96_dm16_nh8_el2_dl1_df32_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
+mse:0.38906732201576233, mae:0.41200849413871765, dtw:Not calculated
+
+long_term_forecast_ETTh1_missing_OT_0.1_TimesNet_ETTh1_ftM_sl96_ll48_pl96_dm16_nh8_el2_dl1_df32_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
+mse:nan, mae:nan, dtw:Not calculated
+
+long_term_forecast_ETTh1_missing_OT_0.2_TimesNet_ETTh1_ftM_sl96_ll48_pl96_dm16_nh8_el2_dl1_df32_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
+mse:nan, mae:nan, dtw:Not calculated
+
+long_term_forecast_ETTh1_missing_OT_0.3_TimesNet_ETTh1_ftM_sl96_ll48_pl96_dm16_nh8_el2_dl1_df32_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
+mse:nan, mae:nan, dtw:Not calculated
+
+long_term_forecast_ETTh1_missing_OT_0.4_TimesNet_ETTh1_ftM_sl96_ll48_pl96_dm16_nh8_el2_dl1_df32_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
+mse:nan, mae:nan, dtw:Not calculated
+
+long_term_forecast_ETTh1_missing_OT_0.5_TimesNet_ETTh1_ftM_sl96_ll48_pl96_dm16_nh8_el2_dl1_df32_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
+mse:nan, mae:nan, dtw:Not calculated
+
+

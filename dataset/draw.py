@@ -67,6 +67,7 @@ def show_pred_result(pred_truth, forecast_series, method, column):
     plt.show()
 
 if __name__ == '__main__':
-    dataset_path = '../dataset/exchange_rate/test301-600.csv'
+    # dataset_path = '../dataset/exchange_rate/test301-600.csv'
+    dataset_path = '../dataset/exchange_rate/test601-900.csv'
     df_origin = pd.read_csv(dataset_path)
     show_specify_line(df_origin, ['OT'], colour='blue')

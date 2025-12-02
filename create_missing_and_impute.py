@@ -135,9 +135,8 @@ def seek_random_seed(column):
 if __name__ == '__main__':
     # dataset_path = 'dataset/exchange_rate/exchange_rate.csv'
     # dataset_path = 'dataset/exchange_rate/test.csv'
-    dataset_path = 'dataset/exchange_rate/test301-600.csv'
     df_origin = pd.read_csv(dataset_path)
-    show_specify_line(df_origin, ['OT'], colour='green')
+    # show_specify_line(df_origin, ['OT'], colour='green')
     df_last = df_origin
 
     # missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
@@ -145,7 +144,7 @@ if __name__ == '__main__':
     for  missing_rate in missing_rate_list:
         print(missing_rate)
         # ==== create missing values ====
-        df_missing = use_missing_creator(df_last, missing_rate, ["OT"], if_figure=True, if_write=True,
+        df_missing = use_missing_creator(df_last, missing_rate, ["OT"], if_figure=False, if_write=False,
                                          min_seg_len=1, max_seg_len=10)
         # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6"], if_figure=False, if_write=False)
         # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6", "OT"], if_figure=False, if_write=False)
@@ -156,8 +155,8 @@ if __name__ == '__main__':
         methods = ["mean", "front", "knn", "xgboost"]
         for method in methods:
             data = My_Data(df_missing)
-            df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=True)
+            df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=False)
             # df_imputed = use_imputer(data, missing_rate, "covariate", method, if_write=False)
             # df_imputed = use_imputer(data, missing_rate, "all", method, if_write=False)
-            show_specify_line(df_imputed, ['OT'], colour='blue')
+            show_specify_line(df_imputed, ['OT'], colour='#F3D266')
             # show_change(df_origin, df_imputed, method)

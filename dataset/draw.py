@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 # 尝试加载常见中文字体
@@ -48,13 +49,15 @@ def show_change(df_origin, df_cleaned, method, columns=None):
     for column in columns:
         plt.figure(figsize=(10, 6))
         plt.plot(df_origin.index, df_origin[column], label='origin data', linestyle='-', color='green')
-        plt.plot(df_cleaned.index, df_cleaned[column], label='imputed data', linestyle='-', color='blue')
+        # plt.plot(df_cleaned.index, df_cleaned[column], label='imputed data', linestyle='-', color='blue')
+        plt.plot(df_cleaned.index, df_cleaned[column], label='reconstructing data', linestyle='-', color='blue')
         plt.title(f"{method}填补结果")
         plt.ylabel(f'{column}')
         plt.legend()
         plt.grid(False)
 
     plt.show()
+
 
 def show_pred_result(pred_truth, forecast_series, method, column):
     plt.figure(figsize=(10, 5))
@@ -66,8 +69,20 @@ def show_pred_result(pred_truth, forecast_series, method, column):
     plt.legend()
     plt.show()
 
+
 if __name__ == '__main__':
+    np.random.seed(42)
     # dataset_path = '../dataset/exchange_rate/test301-600.csv'
-    dataset_path = '../dataset/exchange_rate/test601-900.csv'
-    df_origin = pd.read_csv(dataset_path)
-    show_specify_line(df_origin, ['OT'], colour='blue')
+    # dataset_path = '../dataset/exchange_rate/test601-900.csv'
+    # df = pd.read_csv(dataset_path)
+    dates = pd.date_range('2020-01-01', periods=100, freq='D')
+    y1 = np.sin(np.arange(100) / 5) + np.random.normal(0, 0.3, 100)
+    y2 = y1.copy() + 0.1
+    y3 = y1.copy()
+    df1 = pd.DataFrame({'date': dates, 'OT': y1})
+    df2 = pd.DataFrame({'date': dates, 'OT': y2})
+    df3 = pd.DataFrame({'date': dates, 'OT': y3})
+    df3.iloc[56, 1] = 3
+    # show_specify_line(df, ['value'], colour='red')
+    show_change(df1, df2, 1)
+    show_change(df1, df3, 1)

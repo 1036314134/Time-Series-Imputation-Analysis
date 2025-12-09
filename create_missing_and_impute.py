@@ -60,10 +60,10 @@ def use_missing_creator(df_last,
             from data_processing.create_missing import introduce_missing_segments
             df_missing = introduce_missing_segments(df_missing, missing_rate, column, min_seg_len=min_seg_len,
                                                     max_seg_len=max_seg_len, end=slice_3[0]-1, random_seed=seed)
-        df_missing.to_csv(dataset_path[:-4] + "_missing_" + write_name + "_" + str(missing_rate) + ".csv", index=False)
+        df_missing.to_csv(dataset_path[:-4] + "_" + write_name + "_" + str(missing_rate) + ".csv", index=False)
     # If no data is written, then data is read from the file.
     else:
-        df_missing = pd.read_csv(dataset_path[:-4] + "_missing_" + write_name + "_" + str(missing_rate) + ".csv")
+        df_missing = pd.read_csv(dataset_path[:-4] + "_" + write_name + "_" + str(missing_rate) + ".csv")
 
     # whether to display the attribute sequence
     if if_figure:
@@ -106,9 +106,9 @@ def use_imputer(data, missing_rate, missing_column, imputer_name, if_write=True)
             print("No impute algorithm was used.")
             data.imputed_data_df = data.raw_data_df
         data.change_feature_to_df()
-        data.imputed_data_df.to_csv(dataset_path[:-4] + "_missing_" + missing_column + "_" + str(missing_rate) + "_imputed_by_" + imputer_name + ".csv", index=False)
+        data.imputed_data_df.to_csv(dataset_path[:-4] + "_" + missing_column + "_" + str(missing_rate) + "_" + imputer_name + ".csv", index=False)
     else:
-        data.imputed_data_df = pd.read_csv(dataset_path[:-4] + "_missing_" + missing_column + "_" + str(missing_rate) + "_imputed_by_" + imputer_name + ".csv")
+        data.imputed_data_df = pd.read_csv(dataset_path[:-4] + "_" + missing_column + "_" + str(missing_rate) + "_" + imputer_name + ".csv")
 
     return data.imputed_data_df
 
@@ -133,18 +133,18 @@ def seek_random_seed(column):
 
 
 if __name__ == '__main__':
-    # dataset_path = 'dataset/exchange_rate/exchange_rate.csv'
+    dataset_path = 'dataset/exchange_rate/exchange_rate.csv'
     # dataset_path = 'dataset/exchange_rate/test.csv'
     df_origin = pd.read_csv(dataset_path)
     # show_specify_line(df_origin, ['OT'], colour='green')
     df_last = df_origin
 
-    # missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
-    missing_rate_list = [0.5]
+    missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
+    # missing_rate_list = [0.5]
     for  missing_rate in missing_rate_list:
         print(missing_rate)
         # ==== create missing values ====
-        df_missing = use_missing_creator(df_last, missing_rate, ["OT"], if_figure=False, if_write=False,
+        df_missing = use_missing_creator(df_last, missing_rate, ["OT"], if_figure=False, if_write=True,
                                          min_seg_len=1, max_seg_len=10)
         # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6"], if_figure=False, if_write=False)
         # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6", "OT"], if_figure=False, if_write=False)
@@ -155,8 +155,8 @@ if __name__ == '__main__':
         methods = ["mean", "front", "knn", "xgboost"]
         for method in methods:
             data = My_Data(df_missing)
-            df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=False)
+            df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=True)
             # df_imputed = use_imputer(data, missing_rate, "covariate", method, if_write=False)
             # df_imputed = use_imputer(data, missing_rate, "all", method, if_write=False)
-            show_specify_line(df_imputed, ['OT'], colour='#F3D266')
+            # show_specify_line(df_imputed, ['OT'], colour='#F3D266')
             # show_change(df_origin, df_imputed, method)

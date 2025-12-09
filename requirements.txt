@@ -19,3 +19,5 @@ torch==2.8.0+cu129
 toml==0.10.2
 tqdm==4.64.1
 xgboost==2.0.3
+manba-ssm
+django-layers-hr

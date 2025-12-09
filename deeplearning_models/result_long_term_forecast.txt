@@ -1,3 +1,0 @@
-long_term_forecast_exchange_rate_Nonstationary_Transformer_custom_ftM_sl96_ll48_pl96_dm512_nh8_el2_dl1_df2048_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
-mse:0.1338696926832199, mae:0.2546969950199127, dtw:Not calculated
-

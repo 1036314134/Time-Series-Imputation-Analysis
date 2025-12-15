@@ -219,7 +219,7 @@ for attr in OT; do
   python -u run.py \
     --task_name long_term_forecast \
     --is_training 1 \
-    --root_path  ./dataset/ETT-small/\
+    --root_path  ../dataset/ETT-small/\
     --data_path ETTh1.csv \
     --model_id ETTh1 \
     --model $model_name \

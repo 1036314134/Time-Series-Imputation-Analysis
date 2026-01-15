@@ -19,6 +19,7 @@ class My_Data:
         if self.imputed_feature_array is not None:
             self.imputed_feature_df = pd.DataFrame(self.imputed_feature_array, columns=self.raw_feature_df.columns, index=self.raw_feature_df.index)
         self.imputed_data_df = pd.concat([self.timestamp, self.imputed_feature_df], axis=1)
+        self.imputed_data_df = self.imputed_data_df.dropna(axis=0, how='any').reset_index(drop=True)
 
 
     def normalize(self, normalizer="z_score"):

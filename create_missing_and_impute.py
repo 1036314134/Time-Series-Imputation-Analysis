@@ -1,4 +1,5 @@
 import pandas as pd
+from data_processing.calculate_metric import calculate_ts_metric
 from data_processing.data_loader import My_Data
 from dataset.draw import show_specify_line, show_change
 
@@ -74,7 +75,10 @@ def use_missing_creator(df_last,
 
 def use_imputer(data, missing_rate, missing_column, imputer_name, if_write=True):
     if if_write:
-        if imputer_name == "mean":
+        if imputer_name == "delete":
+            from imputer.delete import delete_missing
+            data.imputed_feature_df = delete_missing(data.raw_feature_df)
+        elif imputer_name == "mean":
             from imputer.mean_imputer import mean_impute
             data.imputed_feature_df = mean_impute(data.raw_feature_df)
         elif imputer_name == "front":
@@ -133,13 +137,15 @@ def seek_random_seed(column):
 
 
 if __name__ == '__main__':
-    # dataset_path = 'dataset/exchange_rate/exchange_rate.csv'
-    # dataset_path = 'dataset/exchange_rate/test.csv'
-    dataset_path = 'dataset/weather/weather.csv'
+    dataset_path = 'dataset/exchange_rate/exchange_rate.csv'
+    # dataset_path = 'dataset/weather/weather.csv'
+    # dataset_path = 'dataset/ETT-small/ETTh1.csv'
     df_origin = pd.read_csv(dataset_path)
-    show_specify_line(df_origin, ['OT'], colour='green')
+    # show_specify_line(df_origin, ['OT'], colour='green')
     df_last = df_origin
 
+    # calculate_ts_metric(df_origin, period=365)
+    #
     missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
     # missing_rate_list = [0.5]
     for  missing_rate in missing_rate_list:
@@ -147,17 +153,15 @@ if __name__ == '__main__':
         # ==== create missing values ====
         df_missing = use_missing_creator(df_last, missing_rate, ["OT"], if_figure=False, if_write=False,
                                          min_seg_len=1, max_seg_len=10)
-        # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6"], if_figure=False, if_write=False)
-        # df_missing = use_missing_creator(df_last, missing_rate, ["0", "1", "2", "3", "4", "5", "6", "OT"], if_figure=False, if_write=False)
         df_last = df_missing
 
         # ==== use imputer ====
         # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim", "trmf"]
-        methods = ["mean", "front", "knn", "xgboost"]
+        # methods = ["mean", "front", "knn", "xgboost"]
+        methods = ["delete"]
         for method in methods:
             data = My_Data(df_missing)
-            df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=False)
-            # df_imputed = use_imputer(data, missing_rate, "covariate", method, if_write=False)
-            # df_imputed = use_imputer(data, missing_rate, "all", method, if_write=False)
-            # show_specify_line(df_imputed, ['OT'], colour='#F3D266')
-            show_change(df_origin, df_imputed, method)
+            df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=True)
+            show_specify_line(df_imputed, ['OT'], colour='#F3D266')
+            # show_change(df_origin, df_imputed, method)
+

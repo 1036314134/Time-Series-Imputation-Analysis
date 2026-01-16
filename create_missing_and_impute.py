@@ -142,26 +142,28 @@ if __name__ == '__main__':
     # dataset_path = 'dataset/ETT-small/ETTh1.csv'
     df_origin = pd.read_csv(dataset_path)
     # show_specify_line(df_origin, ['OT'], colour='green')
+    # calculate_ts_metric(df_origin, period=365)
     df_last = df_origin
 
-    # calculate_ts_metric(df_origin, period=365)
-    #
-    missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
-    # missing_rate_list = [0.5]
+    # missing_rate_list = [0.1, 0.2, 0.3, 0.4, 0.5]
+    missing_rate_list = [0.1]
     for  missing_rate in missing_rate_list:
         print(missing_rate)
         # ==== create missing values ====
         df_missing = use_missing_creator(df_last, missing_rate, ["OT"], if_figure=False, if_write=False,
                                          min_seg_len=1, max_seg_len=10)
         df_last = df_missing
+        # calculate_ts_metric(df_missing, period=24)
 
         # ==== use imputer ====
-        # methods = ["mean", "front", "knn", "xgboost", "miss_forest", "iim", "trmf"]
+        # methods = ["delete", "mean", "front", "knn", "xgboost", "miss_forest", "iim", "trmf"]
         # methods = ["mean", "front", "knn", "xgboost"]
-        methods = ["delete"]
+        methods = ["mean", "front"]
         for method in methods:
             data = My_Data(df_missing)
-            df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=True)
-            show_specify_line(df_imputed, ['OT'], colour='#F3D266')
-            # show_change(df_origin, df_imputed, method)
+            df_imputed = use_imputer(data, missing_rate, "OT", method, if_write=False)
+            # show_specify_line(df_imputed, ['OT'], colour='#F3D266')
+            show_change(df_origin, df_imputed, method)
+            print(str(missing_rate) + "_" + method)
+            calculate_ts_metric(df_imputed, period=365)
 

@@ -154,3 +154,33 @@ def calculate_ts_metric(df, period = 12):
     # lb_pval = lb_test['lb_pvalue']
     #
     # print("Ljung-Box p-values:", lb_test['lb_pvalue'].values)
+
+
+
+def compute_ot_mae_mse(df_origin, df_imputed, col_name="OT"):
+    """
+    计算真实数据与填补数据中 OT 序列的 MAE 和 MSE
+
+    Parameters
+    ----------
+    df_origin : pd.DataFrame
+        真实数据
+    df_imputed : pd.DataFrame
+        填补后数据
+    col_name : str
+        需要对比的列名，默认 'OT'
+
+    Returns
+    -------
+    mae : float
+    mse : float
+    """
+    y_true = df_origin[col_name].values
+    y_pred = df_imputed[col_name].values
+
+    mae = np.mean(np.abs(y_true - y_pred))
+    mse = np.mean((y_true - y_pred) ** 2)
+    print("MAE:", mae)
+    print("MSE:", mse)
+
+    # return mae, mse

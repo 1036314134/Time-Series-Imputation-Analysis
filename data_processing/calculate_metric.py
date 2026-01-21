@@ -4,11 +4,14 @@ import numpy as np
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.tsa.seasonal import STL
 from statsmodels.tsa.stattools import adfuller, kpss
-from statsmodels.tsa.stattools import acf
+from statsmodels.tsa.stattools import acf, pacf
 from scipy.signal import periodogram
 import warnings
 from statsmodels.tools.sm_exceptions import InterpolationWarning
 warnings.simplefilter("ignore", InterpolationWarning)
+from scipy.stats import entropy, wasserstein_distance, ks_2samp
+from sklearn.metrics import mutual_info_score
+
 
 
 def hurst_exponent_rs(ts, min_lag=10, max_lag=None):
@@ -184,3 +187,108 @@ def compute_ot_mae_mse(df_origin, df_imputed, col_name="OT"):
     print("MSE:", mse)
 
     # return mae, mse
+
+
+def evaluate_ot_similarity(
+    df_true,
+    df_imputed,
+    col_name="OT",
+    n_bins=50,
+    max_lag=20
+):
+    """
+    计算真实 OT 序列与填补 OT 序列之间的多种差异指标
+
+    Parameters
+    ----------
+    df_true : pd.DataFrame
+        真实数据
+    df_imputed : pd.DataFrame
+        填补后数据
+    col_name : str
+        对比的列名（默认 OT）
+    n_bins : int
+        估计分布时使用的直方图 bin 数
+    max_lag : int
+        ACF / PACF 的最大滞后阶数
+
+    Returns
+    -------
+    metrics : dict
+        各类指标组成的字典
+    """
+
+    # =========================
+    # 1. 数据对齐 & 清洗
+    # =========================
+    aligned = pd.concat(
+        [df_true[col_name], df_imputed[col_name]],
+        axis=1,
+        keys=["true", "imputed"]
+    ).dropna()
+
+    if len(aligned) == 0:
+        raise ValueError("对齐后没有可用于计算的 OT 样本")
+
+    x = aligned["true"].values
+    y = aligned["imputed"].values
+
+    metrics = {}
+
+    # =========================
+    # 2. 点对点误差指标
+    # =========================
+    diff = x - y
+    metrics["MAE"] = np.mean(np.abs(diff))
+    metrics["MSE"] = np.mean(diff ** 2)
+
+    # =========================
+    # 3. 分布差异指标
+    # =========================
+    # 统一 bin（非常重要）
+    hist_range = (min(x.min(), y.min()), max(x.max(), y.max()))
+
+    px, _ = np.histogram(x, bins=n_bins, range=hist_range, density=True)
+    py, _ = np.histogram(y, bins=n_bins, range=hist_range, density=True)
+
+    # 避免 log(0)
+    eps = 1e-10
+    px += eps
+    py += eps
+
+    # KL 散度
+    metrics["KL"] = entropy(px, py)
+
+    # JS 散度
+    m = 0.5 * (px + py)
+    metrics["JS"] = 0.5 * entropy(px, m) + 0.5 * entropy(py, m)
+
+    # Wasserstein 距离
+    metrics["Wasserstein"] = wasserstein_distance(x, y)
+
+    # Kolmogorov–Smirnov 距离
+    ks_stat, _ = ks_2samp(x, y)
+    metrics["KS"] = ks_stat
+
+    # =========================
+    # 4. 时序结构差异指标
+    # =========================
+    # ACF
+    acf_x = acf(x, nlags=max_lag, fft=True)
+    acf_y = acf(y, nlags=max_lag, fft=True)
+    metrics["ACF_MSE"] = np.mean((acf_x - acf_y) ** 2)
+
+    # PACF
+    pacf_x = pacf(x, nlags=max_lag, method="yw")
+    pacf_y = pacf(y, nlags=max_lag, method="yw")
+    metrics["PACF_MSE"] = np.mean((pacf_x - pacf_y) ** 2)
+
+    # =========================
+    # 5. 互信息（离散化后）
+    # =========================
+    x_disc = np.digitize(x, bins=np.histogram_bin_edges(x, bins=n_bins))
+    y_disc = np.digitize(y, bins=np.histogram_bin_edges(y, bins=n_bins))
+
+    metrics["Mutual_Information"] = mutual_info_score(x_disc, y_disc)
+
+    return metrics

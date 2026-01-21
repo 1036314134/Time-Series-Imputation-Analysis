@@ -94,6 +94,90 @@ def spectral_entropy(ts):
     return -np.sum(psd_norm * np.log(psd_norm))
 
 
+# 趋势、季节强度
+def trend_seasonal_strength(x, period=24):
+    """
+    返回：trend_strength, seasonal_strength
+    """
+    stl = STL(x, period=period, robust=True)
+    res = stl.fit()
+
+    trend = res.trend
+    seasonal = res.seasonal
+    resid = res.resid
+
+    var_r = np.var(resid)
+    var_tr = np.var(trend + resid)
+    var_sr = np.var(seasonal + resid)
+
+    trend_strength = 1 - var_r / (var_tr + 1e-8)
+    seasonal_strength = 1 - var_r / (var_sr + 1e-8)
+
+    return trend_strength, seasonal_strength
+
+
+# 循环强度
+def cycle_strength(x):
+    freqs, psd = periodogram(x)
+    if len(psd) <= 1:
+        return 0.0
+
+    psd = psd[1:]   # 去掉 DC 分量
+    return np.max(psd) / np.sum(psd)
+
+
+def compute_metrics(ot):
+    """
+    输入：一维时间序列 ot
+    输出：指标字典（供 compare_ot_metrics 使用）
+    """
+
+    ot = np.asarray(ot)
+    metrics = {}
+
+    # ---------- ACF ----------
+    acf_vals = acf(ot, nlags=20, fft=True)
+    metrics["acf1"] = acf_vals[1]
+
+    # ---------- Ljung–Box ----------
+    lb = acorr_ljungbox(ot, lags=[5, 10, 20], return_df=True)
+    metrics["ljung_box"] = lb
+
+    # ---------- ADF ----------
+    adf_stat, adf_p, *_ = adfuller(ot, autolag="AIC")
+    metrics["adf_stat"] = adf_stat
+    metrics["adf_pvalue"] = adf_p
+
+    # ---------- KPSS ----------
+    try:
+        kpss_stat, kpss_p, *_ = kpss(ot, regression="c", nlags="auto")
+    except Exception:
+        kpss_stat, kpss_p = np.nan, np.nan
+
+    metrics["kpss_stat"] = kpss_stat
+    metrics["kpss_pvalue"] = kpss_p
+
+    # ---------- Hurst ----------
+    metrics["hurst"] = hurst_exponent_rs(ot)
+
+    # ---------- Spectral entropy ----------
+    metrics["spectral_entropy"] = spectral_entropy(ot)
+
+    # ---------- Trend / Seasonal ----------
+    try:
+        trend_s, seasonal_s = trend_seasonal_strength(ot)
+    except Exception:
+        trend_s, seasonal_s = np.nan, np.nan
+
+    metrics["trend_strength"] = trend_s
+    metrics["seasonal_strength"] = seasonal_s
+
+    # ---------- Cycle ----------
+    metrics["cycle_strength"] = cycle_strength(ot)
+
+    return metrics
+
+
 def calculate_ts_metric(df, period = 12):
     # 提取 OT 时间序列
     ot = df.iloc[:, -1].dropna()  # 最后一列为 OT
@@ -158,6 +242,88 @@ def calculate_ts_metric(df, period = 12):
     #
     # print("Ljung-Box p-values:", lb_test['lb_pvalue'].values)
 
+
+def compare_ot_metrics(
+    df_before,
+    df_after,
+    metric_func,
+    eps=1e-8
+):
+    """
+    对比两个 DataFrame 中 OT 列的时间序列指标
+
+    参数
+    ----
+    df_before : DataFrame
+        修改前数据
+    df_after : DataFrame
+        修改后数据
+    metric_func : callable
+        输入 ot 序列，返回指标 dict 的函数
+    eps : float
+        防止除零的小量
+
+    输出
+    ----
+    None（直接打印对比结果）
+    """
+
+    ot_before = df_before.iloc[:, -1].values
+    ot_after = df_after.iloc[:, -1].values
+
+    metrics_before = metric_func(ot_before)
+    metrics_after = metric_func(ot_after)
+
+    print("=" * 80)
+    print("OT 指标对比（修改前 → 修改后 → 变化百分比）")
+    print("=" * 80)
+
+    for key in metrics_before.keys():
+        val_before = metrics_before[key]
+        val_after = metrics_after[key]
+
+        # ---------- 情况 1：标量指标 ----------
+        if np.isscalar(val_before):
+            delta_pct = (val_after - val_before) / (abs(val_before) + eps) * 100
+
+            print(f"{key}")
+            print(f"  修改前: {val_before:.6f}")
+            print(f"  修改后: {val_after:.6f}")
+            print(f"  变化率: {delta_pct:+.2f}%")
+            print("-" * 60)
+
+        # ---------- 情况 2：Ljung–Box（DataFrame） ----------
+        elif hasattr(val_before, "shape") and "lb_stat" in val_before.columns:
+            print(f"{key} (Ljung–Box stat)")
+
+            for lag in val_before.index:
+                b = val_before.loc[lag, "lb_stat"]
+                a = val_after.loc[lag, "lb_stat"]
+                delta_pct = (a - b) / (abs(b) + eps) * 100
+
+                print(
+                    f"  lag={lag:>3d}: "
+                    f"{b:.2f} → {a:.2f}  ({delta_pct:+.2f}%)"
+                )
+
+            print("-" * 60)
+
+        # ---------- 情况 3：向量指标（ACF / PACF 等） ----------
+        elif isinstance(val_before, (list, np.ndarray)):
+            # 默认只比较“均值幅度”，避免维度歧义
+            b = np.mean(np.abs(val_before))
+            a = np.mean(np.abs(val_after))
+            delta_pct = (a - b) / (abs(b) + eps) * 100
+
+            print(f"{key} (mean |value|)")
+            print(f"  修改前: {b:.6f}")
+            print(f"  修改后: {a:.6f}")
+            print(f"  变化率: {delta_pct:+.2f}%")
+            print("-" * 60)
+
+        else:
+            print(f"{key}: [未支持的指标类型，已跳过]")
+            print("-" * 60)
 
 
 def compute_ot_mae_mse(df_origin, df_imputed, col_name="OT"):
@@ -292,3 +458,16 @@ def evaluate_ot_similarity(
     metrics["Mutual_Information"] = mutual_info_score(x_disc, y_disc)
 
     return metrics
+
+
+if __name__ == "__main__":
+    metrics = evaluate_ot_similarity(
+        df_true=df_real,
+        df_imputed=df_filled,
+        col_name="OT",
+        n_bins=50,
+        max_lag=20
+    )
+
+    for k, v in metrics.items():
+        print(f"{k}: {v:.6f}")

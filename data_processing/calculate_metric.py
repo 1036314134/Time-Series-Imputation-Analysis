@@ -126,7 +126,7 @@ def cycle_strength(x):
     return np.max(psd) / np.sum(psd)
 
 
-def compute_metrics(ot):
+def compute_metrics(ot, period=24):
     """
     输入：一维时间序列 ot
     输出：指标字典（供 compare_ot_metrics 使用）
@@ -165,7 +165,7 @@ def compute_metrics(ot):
 
     # ---------- Trend / Seasonal ----------
     try:
-        trend_s, seasonal_s = trend_seasonal_strength(ot)
+        trend_s, seasonal_s = trend_seasonal_strength(ot, period=period)
     except Exception:
         trend_s, seasonal_s = np.nan, np.nan
 
@@ -246,7 +246,8 @@ def calculate_ts_metric(df, period = 12):
 def compare_ot_metrics(
     df_before,
     df_after,
-    metric_func,
+    metric_func=compute_metrics,
+    period=24,
     eps=1e-8
 ):
     """
@@ -271,8 +272,8 @@ def compare_ot_metrics(
     ot_before = df_before.iloc[:, -1].values
     ot_after = df_after.iloc[:, -1].values
 
-    metrics_before = metric_func(ot_before)
-    metrics_after = metric_func(ot_after)
+    metrics_before = metric_func(ot_before, period=period)
+    metrics_after = metric_func(ot_after, period=period)
 
     print("=" * 80)
     print("OT 指标对比（修改前 → 修改后 → 变化百分比）")

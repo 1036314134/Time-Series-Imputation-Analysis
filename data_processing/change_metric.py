@@ -178,10 +178,29 @@ def _modify_trend(x, segment, strength, period=None):
     seasonal = res.seasonal
     resid = res.resid
 
-    trend_mean = np.mean(trend[segment])
+    # def deform_trend_shape(trend, segment, strength):
+    #     t = np.arange(len(trend))
+    #     t_seg = t[segment]
+    #
+    #     # 低频 smooth oscillation
+    #     freq = 1 / (len(t_seg) * 0.8)
+    #     oscillation = np.sin(2 * np.pi * freq * t_seg)
+    #
+    #     # 强度控制
+    #     amp = strength * np.std(trend[segment])
+    #
+    #     trend_new = trend.copy()
+    #     trend_new[segment] += amp * oscillation
+    #
+    #     return trend_new
+
 
     # strength 控制趋势向“平坦”退化的程度
     trend_new = trend.copy()
+
+    # trend_new = deform_trend_shape(trend_new, segment, strength)
+
+    trend_mean = np.mean(trend[segment])
     trend_new[segment] = (
         (1 - strength) * trend[segment]
         + strength * trend_mean
@@ -194,7 +213,6 @@ def _modify_trend(x, segment, strength, period=None):
 def _modify_seasonality(x, segment, strength, period):
     stl = STL(x, period=period, robust=True)
     res = stl.fit()
-
     seasonal = res.seasonal
     seasonal_new = seasonal.copy()
     seasonal_new[segment] *= (1 - strength)
@@ -312,8 +330,8 @@ if __name__ == '__main__':
         for change_strength in change_strength_list:
 
             df_change = modify_ot_by_metric(df_origin, metric=metric, strength=change_strength, period=24)
-            df_change.to_csv(dataset_path[:-4] + "_" + metric + "_" + str(change_strength) + ".csv", index=False)
+            # df_change.to_csv(dataset_path[:-4] + "_" + metric + "_" + str(change_strength) + ".csv", index=False)
 
             print(metric + "_" + str(change_strength))
-            compare_ot_metrics(df_before=df_origin, df_after=df_change, metric_func=compute_metrics)
+            compare_ot_metrics(df_before=df_origin, df_after=df_change, metric_func=compute_metrics, period=24)
             show_change(df_origin, df_change, metric)

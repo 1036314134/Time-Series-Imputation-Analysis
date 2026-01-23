@@ -82,102 +82,120 @@ def show_metirc_change(metrics, xlabel_name, ylabel_name, label):
 if __name__ == '__main__':
     # ======== ETTh1 ========
     # ======== TimesNet ========
-    TimesNet_pre_mse = {
-        "Trend": [0.389067322, 0.389089674, 0.389197171, 0.3899827, 0.392052591, 0.396200418],
-        "Seasonal": [0.389067322, 0.389022946, 0.388949871, 0.388860732, 0.388785332, 0.388712347],
-        "Cycle": [0.389067322, 0.390227228, 0.391622484, 0.393016905, 0.394612968, 0.39625296],
-    }
-    show_metirc_change(TimesNet_pre_mse, "Modification intensity", "predict_MSE",
-                       "TimesNet Predict Performance under Different Modification")
-
-    TimesNet_pre_mae = {
-        "Trend": [0.412008494, 0.412139952, 0.412536353, 0.41397202, 0.416510075, 0.420100749],
-        "Seasonal": [0.412008494, 0.412001848, 0.411944091, 0.411865771, 0.411808908, 0.411811799],
-        "Cycle": [0.412008494, 0.413556725, 0.415232569, 0.41687417, 0.41864711, 0.420354187],
-    }
-    show_metirc_change(TimesNet_pre_mae, "Modification intensity", "predict_MAE",
-                       "TimesNet Predict Performance under Different Modification")
-
-    # ======== Non_Transformer ========
-    Non_Trans_pre_mse = {
-        "Trend": [0.558390379, 0.727260351, 0.727052152, 0.727468312, 0.728725731, 0.731910348],
-        "Seasonal": [0.558390379, 0.727279723, 0.726577938, 0.72679162, 0.726887107, 0.726581395],
-        "Cycle": [0.558390379, 0.729615808, 0.729030132, 0.731538594, 0.733770907, 0.738498509],
-    }
-    show_metirc_change(Non_Trans_pre_mse, "Modification intensity", "predict_MSE",
-                       "Non_Transformer Predict Performance under Different Modification")
-
-    Non_Trans_pre_mae = {
-        "Trend": [0.516917169, 0.579124629, 0.579558015, 0.580918193, 0.583065569, 0.58610642],
-        "Seasonal": [0.516917169, 0.578820646, 0.578241229, 0.578371346, 0.578460336, 0.578209281],
-        "Cycle": [0.516917169, 0.581783056, 0.582266808, 0.585230708, 0.587951362, 0.592679858],
-    }
-    show_metirc_change(Non_Trans_pre_mae, "Modification intensity", "predict_MAE",
-                       "Non_Transformer  Predict Performance under Different Modification")
-
-    # ======== PatchTST ========
-    PatchTST_pre_mse = {
-        "Trend": [0.378274769, 0.378267974, 0.379348338, 0.380165815, 0.381863058, 0.38559708],
-        "Seasonal": [0.378274769, 0.378283769, 0.37828207, 0.378261, 0.378222734, 0.378161788],
-        "Cycle": [0.378274769, 0.379072338, 0.379970849, 0.380966663, 0.382842034, 0.384009033],
-    }
-    show_metirc_change(PatchTST_pre_mse, "Modification intensity", "predict_MSE",
-                       "PatchTST Predict Performance under Different Modification")
-
-    PatchTST_pre_mae = {
-        "Trend": [0.399296999, 0.399397284, 0.400435835, 0.401843578, 0.403898627, 0.406922221],
-        "Seasonal": [0.399296999, 0.39933306, 0.399379343, 0.399412572, 0.399402171, 0.399312437],
-        "Cycle": [0.399296999, 0.400533438, 0.401835263, 0.403181583, 0.40500626, 0.406354696],
-    }
-    show_metirc_change(PatchTST_pre_mse, "Modification intensity", "predict_MSE",
-                       "PatchTST Predict Performance under Different Modification")
-
-    # # ======== ACF1 ========
-    # pre_mse = {
-    #     "TimesNet": [0.389067322, 0.389089674, 0.389197171, 0.3899827, 0.392052591, 0.396200418],
-    #     "Non_Transformer": [0.5583903789520264, 0.727260351, 0.727052152, 0.727468312, 0.728725731, 0.731910348],
-    #     "PatchTST": [0.378274769, 0.378267974, 0.379348338, 0.380165815, 0.381863058, 0.38559708],
+    # TimesNet_pre_mse = {
+    #     "Modify Trend": [0.389067322, 0.389089674, 0.389197171, 0.3899827, 0.392052591, 0.396200418],
+    #     "Modify Seasonal": [0.389067322, 0.389022946, 0.388949871, 0.388860732, 0.388785332, 0.388712347],
+    #     "Modify Cycle": [0.389067322, 0.390227228, 0.391622484, 0.393016905, 0.394612968, 0.39625296],
     # }
-    # show_metirc_change(pre_mse, "Modification intensity", "predict_MSE", "Predict Performance under Different Trend")
+    # show_metirc_change(TimesNet_pre_mse, "Modification intensity", "predict_MSE",
+    #                    "TimesNet MSE under Different Modification")
     #
-    # pre_mae = {
-    #     "TimesNet": [0.412008494, 0.412139952, 0.412536353, 0.41397202, 0.416510075, 0.420100749],
-    #     "Non_Transformer": [0.516917169, 0.579124629, 0.579558015, 0.580918193, 0.583065569, 0.58610642],
-    #     "PatchTST": [0.399296999, 0.399397284, 0.400435835, 0.401843578, 0.403898627, 0.406922221],
+    # TimesNet_pre_mae = {
+    #     "Modify Trend": [0.412008494, 0.412139952, 0.412536353, 0.41397202, 0.416510075, 0.420100749],
+    #     "Modify Seasonal": [0.412008494, 0.412001848, 0.411944091, 0.411865771, 0.411808908, 0.411811799],
+    #     "Modify Cycle": [0.412008494, 0.413556725, 0.415232569, 0.41687417, 0.41864711, 0.420354187],
     # }
-    # show_metirc_change(pre_mae, "Modification intensity", "predict_MAE", "Predict Performance under Different Trend")
+    # show_metirc_change(TimesNet_pre_mae, "Modification intensity", "predict_MAE",
+    #                    "TimesNet MAE under Different Modification")
     #
-    #
-    # # ======== seasonal ========
-    # pre_mse = {
-    #     "TimesNet": [0.389067322, 0.389089674, 0.389197171, 0.3899827, 0.392052591, 0.396200418],
-    #     "Non_Transformer": [0.5583903789520264, 0.727260351, 0.727052152, 0.727468312, 0.728725731, 0.731910348],
-    #     "PatchTST": [0.378274769, 0.378267974, 0.379348338, 0.380165815, 0.381863058, 0.38559708],
+    # # ======== Non_Transformer ========
+    # Non_Trans_pre_mse = {
+    #     "Modify Trend": [0.558390379, 0.727260351, 0.727052152, 0.727468312, 0.728725731, 0.731910348],
+    #     "Modify Seasonal": [0.558390379, 0.727279723, 0.726577938, 0.72679162, 0.726887107, 0.726581395],
+    #     "Modify Cycle": [0.558390379, 0.729615808, 0.729030132, 0.731538594, 0.733770907, 0.738498509],
     # }
-    # show_metirc_change(pre_mse, "Modification intensity", "predict_MSE", "Predict Performance under Different Seasonal")
+    # show_metirc_change(Non_Trans_pre_mse, "Modification intensity", "predict_MSE",
+    #                    "Non_Transformer MSE under Different Modification")
     #
-    # pre_mae = {
-    #     "TimesNet": [0.412008494, 0.412139952, 0.412536353, 0.41397202, 0.416510075, 0.420100749],
-    #     "Non_Transformer": [0.516917169, 0.579124629, 0.579558015, 0.580918193, 0.583065569, 0.58610642],
-    #     "PatchTST": [0.399296999, 0.399397284, 0.400435835, 0.401843578, 0.403898627, 0.406922221],
+    # Non_Trans_pre_mae = {
+    #     "Modify Trend": [0.516917169, 0.579124629, 0.579558015, 0.580918193, 0.583065569, 0.58610642],
+    #     "Modify Seasonal": [0.516917169, 0.578820646, 0.578241229, 0.578371346, 0.578460336, 0.578209281],
+    #     "Modify Cycle": [0.516917169, 0.581783056, 0.582266808, 0.585230708, 0.587951362, 0.592679858],
     # }
-    # show_metirc_change(pre_mae, "Modification intensity", "predict_MAE", "Predict Performance under Different Seasonal")
+    # show_metirc_change(Non_Trans_pre_mae, "Modification intensity", "predict_MAE",
+    #                    "Non_Transformer  MAE under Different Modification")
     #
-    #
-    # # ======== cycle ========
-    # pre_mse = {
-    #     "TimesNet": [0.389067322, 0.389089674, 0.389197171, 0.3899827, 0.392052591, 0.396200418],
-    #     "Non_Transformer": [0.5583903789520264, 0.727260351, 0.727052152, 0.727468312, 0.728725731, 0.731910348],
-    #     "PatchTST": [0.378274769, 0.378267974, 0.379348338, 0.380165815, 0.381863058, 0.38559708],
+    # # ======== PatchTST ========
+    # PatchTST_pre_mse = {
+    #     "Modify Trend": [0.378274769, 0.378267974, 0.379348338, 0.380165815, 0.381863058, 0.38559708],
+    #     "Modify Seasonal": [0.378274769, 0.378283769, 0.37828207, 0.378261, 0.378222734, 0.378161788],
+    #     "Modify Cycle": [0.378274769, 0.379072338, 0.379970849, 0.380966663, 0.382842034, 0.384009033],
     # }
-    # show_metirc_change(pre_mse, "Modification intensity", "predict_MSE", "Predict Performance under Different Cycle")
+    # show_metirc_change(PatchTST_pre_mse, "Modification intensity", "predict_MSE",
+    #                    "PatchTST MSE under Different Modification")
     #
-    # pre_mae = {
-    #     "TimesNet": [0.412008494, 0.412139952, 0.412536353, 0.41397202, 0.416510075, 0.420100749],
-    #     "Non_Transformer": [0.516917169, 0.579124629, 0.579558015, 0.580918193, 0.583065569, 0.58610642],
-    #     "PatchTST": [0.399296999, 0.399397284, 0.400435835, 0.401843578, 0.403898627, 0.406922221],
+    # PatchTST_pre_mae = {
+    #     "Modify Trend": [0.399296999, 0.399397284, 0.400435835, 0.401843578, 0.403898627, 0.406922221],
+    #     "Modify Seasonal": [0.399296999, 0.39933306, 0.399379343, 0.399412572, 0.399402171, 0.399312437],
+    #     "Modify Cycle": [0.399296999, 0.400533438, 0.401835263, 0.403181583, 0.40500626, 0.406354696],
     # }
-    # show_metirc_change(pre_mae, "Modification intensity", "predict_MAE", "Predict Performance under Different Cycle")
+    # show_metirc_change(PatchTST_pre_mae, "Modification intensity", "predict_MAE",
+    #                    "PatchTST MAE under Different Modification")
+    #
+    # # ======== 指标变化 ========
+    # trend_strength = {
+    #     "Modify Trend": [0.969148, 0.964016, 0.957254, 0.949141, 0.939066, 0.925396],
+    #     "Modify Seasonal": [0.969148, 0.969004, 0.968753, 0.968563, 0.968344, 0.968147],
+    #     "Modify Cycle": [0.969148, 0.966335, 0.96336, 0.960261, 0.957055, 0.953921],
+    # }
+    # show_metirc_change(trend_strength, "Modification intensity", "trend strength",
+    #                    "trend strength under Different Modification")
+    #
+    # seasonal_strength = {
+    #     "Modify Trend": [0.277475, 0.283061, 0.286113, 0.289577, 0.29495, 0.298022],
+    #     "Modify Seasonal": [0.277475, 0.230186, 0.182242, 0.137548, 0.09697, 0.062027],
+    #     "Modify Cycle": [0.277475, 0.277866, 0.278445, 0.278946, 0.279008, 0.279173],
+    # }
+    # show_metirc_change(seasonal_strength, "Modification intensity", "seasonal strength",
+    #                    "seasonal strength under Different Modification")
+    #
+    # cycle_strength = {
+    #     "Modify Trend": [0.534402, 0.525093, 0.512482, 0.495289, 0.471777, 0.439783],
+    #     "Modify Seasonal": [0.534402, 0.535747, 0.536922, 0.537924, 0.538751, 0.539401],
+    #     "Modify Cycle": [0.534402, 0.513986, 0.490018, 0.462286, 0.430771, 0.395747],
+    # }
+    # show_metirc_change(cycle_strength, "Modification intensity", "cycle strength",
+    #                    "cycle strength under Different Modification")
+    #
+    # acf1 = {
+    #     "Modify Trend": [0.994135, 0.993083, 0.991751, 0.990052, 0.987881, 0.985128],
+    #     "Modify Seasonal": [0.994135, 0.994406, 0.994614, 0.994761, 0.994845, 0.994866],
+    #     "Modify Cycle": [0.994135, 0.993603, 0.993038, 0.99245, 0.991853, 0.991268],
+    # }
+    # show_metirc_change(acf1, "Modification intensity", "acf@1",
+    #                    "acf@1 under Different Modification")
+    #
+    # Ljung_Box_stat = {
+    #     "Modify Trend": [163889.99, 162181.22, 160035.38, 157326.97, 153910.71, 149650.54],
+    #     "Modify Seasonal": [163889.99, 164658.82, 165330.95, 165904.27, 166376.94, 166747.46],
+    #     "Modify Cycle": [163889.99, 162967.24, 161990.37, 160976.51, 159951.93, 158953.1],
+    # }
+    # show_metirc_change(Ljung_Box_stat, "Modification intensity", "Ljung Box stat",
+    #                    "Ljung Box stat under Different Modification")
+    #
+    # spectral_entropy = {
+    #     "Modify Trend": [2.385688, 2.455314, 2.542173, 2.650981, 2.787066, 2.955213],
+    #     "Modify Seasonal": [2.385688, 2.372204, 2.360267, 2.349994, 2.341505, 2.334921],
+    #     "Modify Cycle": [2.385688, 2.498312, 2.620417, 2.751016, 2.887185, 3.023372],
+    # }
+    # show_metirc_change(spectral_entropy, "Modification intensity", "spectral entropy",
+    #                    "spectral entropy under Different Modification")
+    #
+    # MSE = {
+    #     "Modify Trend": [0, 0.601379217, 2.405516869278233, 5.412412956, 9.622067477, 15.03448043],
+    #     "Modify Seasonal": [0, 0.012053106, 0.048212424, 0.108477953, 0.192849695, 0.301327648],
+    #     "Modify Cycle": [0, 0.322317316, 1.289269262, 2.900855841, 5.15707705, 8.057932891],
+    # }
+    # show_metirc_change(MSE, "Modification intensity", "MSE",
+    #                    "MSE under Different Modification")
+
+    MAE = {
+        "Modify Trend": [0, 0.549357576, 1.098715152, 1.648072727, 2.197430303, 2.746787879],
+        "Modify Seasonal": [0, 0.074090006, 0.148180012, 0.222270018, 0.296360024, 0.37045003],
+        "Modify Cycle": [0, 0.455597048, 0.911194095, 1.366791143, 1.822388191, 2.277985238],
+    }
+    show_metirc_change(MAE, "Modification intensity", "MAE",
+                       "MAE under Different Modification")
 
 
 

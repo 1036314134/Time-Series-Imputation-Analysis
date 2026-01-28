@@ -459,16 +459,3 @@ def evaluate_ot_similarity(
     metrics["Mutual_Information"] = mutual_info_score(x_disc, y_disc)
 
     return metrics
-
-
-if __name__ == "__main__":
-    metrics = evaluate_ot_similarity(
-        df_true=df_real,
-        df_imputed=df_filled,
-        col_name="OT",
-        n_bins=50,
-        max_lag=20
-    )
-
-    for k, v in metrics.items():
-        print(f"{k}: {v:.6f}")

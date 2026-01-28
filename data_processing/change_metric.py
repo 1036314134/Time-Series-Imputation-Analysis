@@ -313,15 +313,15 @@ def modify_ot_by_metric(
 if __name__ == '__main__':
     dataset_paths = ['None',
                      '../dataset/exchange_rate/exchange_rate.csv',
-                     '../dataset/weather/weather.csv',
-                     '../dataset/ETT-small/ETTh1.csv',
+                     '../dataset/weather/weather.csv', #30
+                     '../dataset/ETT-small/ETTh1.csv', #24
                      '../dataset/ETT-small/ETTh2.csv',
                      '../dataset/ETT-small/ETTm1.csv',
                      '../dataset/ETT-small/ETTm2.csv',
-                     '../dataset/illness/national_illness.csv'
+                     '../dataset/illness/national_illness.csv' #52
     ]
 
-    dataset_path = dataset_paths[7]
+    dataset_path = dataset_paths[3]
     df_origin = pd.read_csv(dataset_path)
 
 
@@ -332,11 +332,11 @@ if __name__ == '__main__':
         change_strength_list = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
         for change_strength in change_strength_list:
 
-            df_change = modify_ot_by_metric(df_origin, metric=metric, strength=change_strength, period=52)
+            df_change = modify_ot_by_metric(df_origin, metric=metric, strength=change_strength, period=24)
             df_change.to_csv(dataset_path[:-4] + "_" + metric + "_" + str(change_strength) + ".csv", index=False)
 
             print(metric + "_" + str(change_strength))
-            compare_ot_metrics(df_before=df_origin, df_after=df_change, metric_func=compute_metrics, period=52)
+            compare_ot_metrics(df_before=df_origin, df_after=df_change, metric_func=compute_metrics, period=24)
             metrics = evaluate_ot_similarity(df_origin, df_change)
             print(metrics)
-            show_change(df_origin, df_change, metric)
+            # show_change(df_origin, df_change, metric)

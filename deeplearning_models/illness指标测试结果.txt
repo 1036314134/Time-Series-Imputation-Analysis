@@ -1,3 +1,7 @@
+long_term_forecast_ili_36_24_TimesNet_custom_ftM_sl36_ll18_pl24_dm768_nh8_el2_dl1_df768_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
+mse:1.7961633205413818, mae:0.8859999775886536, dtw:Not calculated
+
+
 long_term_forecast_national_illness_trend_0.05_TimesNet_custom_ftM_sl36_ll18_pl24_dm768_nh8_el2_dl1_df768_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
 mse:1.8045084476470947, mae:0.8905875086784363, dtw:Not calculated
 long_term_forecast_national_illness_trend_0.1_TimesNet_custom_ftM_sl36_ll18_pl24_dm768_nh8_el2_dl1_df768_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
@@ -63,6 +67,10 @@ mse:1.96220064163208, mae:0.9328383207321167, dtw:Not calculated
 long_term_forecast_national_illness_cycle_0.5_TimesNet_custom_ftM_sl36_ll18_pl24_dm768_nh8_el2_dl1_df768_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
 mse:2.0030157566070557, mae:0.9417563676834106, dtw:Not calculated
 
+
+
+long_term_forecast_ili_36_24_Nonstationary_Transformer_custom_ftM_sl36_ll18_pl24_dm512_nh8_el2_dl1_df2048_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
+mse:2.5993242263793945, mae:0.9943684339523315, dtw:Not calculated
 
 
 long_term_forecast_national_illness_trend_0.05_Nonstationary_Transformer_custom_ftM_sl36_ll18_pl24_dm512_nh8_el2_dl1_df2048_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
@@ -132,6 +140,10 @@ mse:2.67551589012146, mae:1.0133899450302124, dtw:Not calculated
 
 
 
+long_term_forecast_ili_36_24_PatchTST_custom_ftM_sl36_ll18_pl24_dm1024_nh4_el4_dl1_df2048_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
+mse:2.210747003555298, mae:0.8759064674377441, dtw:Not calculated
+
+
 long_term_forecast_national_illness_trend_0.05_PatchTST_custom_ftM_sl36_ll18_pl24_dm1024_nh4_el4_dl1_df2048_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
 mse:2.2252888679504395, mae:0.8811271786689758, dtw:Not calculated
 long_term_forecast_national_illness_trend_0.1_PatchTST_custom_ftM_sl36_ll18_pl24_dm1024_nh4_el4_dl1_df2048_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
@@ -197,6 +209,10 @@ mse:2.373037815093994, mae:0.9229946136474609, dtw:Not calculated
 long_term_forecast_national_illness_cycle_0.5_PatchTST_custom_ftM_sl36_ll18_pl24_dm1024_nh4_el4_dl1_df2048_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
 mse:2.38936185836792, mae:0.9281496405601501, dtw:Not calculated
 
+
+
+long_term_forecast_ili_36_24_Autoformer_custom_ftM_sl36_ll18_pl24_dm512_nh8_el2_dl1_df2048_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  
+mse:3.2155885696411133, mae:1.2326512336730957, dtw:Not calculated
 
 
 long_term_forecast_national_illness_trend_0.05_Autoformer_custom_ftM_sl36_ll18_pl24_dm512_nh8_el2_dl1_df2048_expand2_dc4_fc3_ebtimeF_dtTrue_Exp_0  

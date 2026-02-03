@@ -315,13 +315,13 @@ if __name__ == '__main__':
                      '../dataset/exchange_rate/exchange_rate.csv',
                      '../dataset/weather/weather.csv', #30
                      '../dataset/ETT-small/ETTh1.csv', #24
-                     '../dataset/ETT-small/ETTh2.csv',
+                     '../dataset/ETT-small/ETTh2.csv', #24
                      '../dataset/ETT-small/ETTm1.csv',
                      '../dataset/ETT-small/ETTm2.csv',
                      '../dataset/illness/national_illness.csv' #52
     ]
 
-    dataset_path = dataset_paths[3]
+    dataset_path = dataset_paths[4]
     df_origin = pd.read_csv(dataset_path)
 
 

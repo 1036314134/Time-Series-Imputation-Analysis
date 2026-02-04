@@ -1,7 +1,7 @@
 from results.show_metirc_change import show_metirc_change
 
 if __name__ == '__main__':
-    # ======== ETTh1 ========
+    # ======== illness ========
     # ======== TimesNet ========
     TimesNet_pre_mse = {
         "Modify Trend": [1.796163321, 1.804508448, 1.866905928, 1.83067584, 1.847233772, 1.879895926, 1.88581419, 1.918817759, 1.956220746, 1.978688478, 2.078234196],

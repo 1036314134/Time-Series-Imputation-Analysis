@@ -1,7 +1,7 @@
 from results.show_metirc_change import show_metirc_change
 
 if __name__ == '__main__':
-    # ======== ETTh1 ========
+    # ======== exchange_rate ========
     # ======== TimesNet ========
     TimesNet_pre_mse = {
         "Modify Trend": [0.109208614, 0.110476717, 0.111916989, 0.113650165, 0.115739778, 0.118303657, 0.12156041, 0.125711873, 0.130971462, 0.137475416, 0.145868391],

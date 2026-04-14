@@ -4,6 +4,9 @@ import pandas as pd
 import torch
 from transformers import AutoModelForCausalLM
 
+LOCAL_MODEL_DIR = str(Path(__file__).resolve().parent / "sundial_base_128m")
+_MODEL_CACHE = {}
+
 
 def _infer_future_timestamps(timestamp_series, forecast_length):
     timestamp_series = timestamp_series.reset_index(drop=True)
@@ -65,14 +68,19 @@ def sundial_forecastor(dataframe, forecast_length, num_samples=100, device=None)
 
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = str(device)
 
     print(f"Using device: {device}")
 
-    model = AutoModelForCausalLM.from_pretrained(
-        "./sundial_base_128m",
-        trust_remote_code=True,
-    ).to(device)
-    model.eval()
+    model = _MODEL_CACHE.get(device)
+    if model is None:
+        print(f"Loading Sundial model once for device={device} from: {LOCAL_MODEL_DIR}")
+        model = AutoModelForCausalLM.from_pretrained(
+            LOCAL_MODEL_DIR,
+            trust_remote_code=True,
+        ).to(device)
+        model.eval()
+        _MODEL_CACHE[device] = model
 
     input_tensor = torch.tensor(
         input_df[value_col].to_numpy(),

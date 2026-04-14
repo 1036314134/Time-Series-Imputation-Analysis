@@ -12,6 +12,7 @@ except ImportError as exc:
 
 
 LOCAL_MODEL_DIR = Path(__file__).resolve().parent / "timesfm_2p5_200m_pytorch"
+_MODEL_CACHE = {}
 
 
 def _infer_future_timestamps(timestamp_series, forecast_length):
@@ -74,8 +75,24 @@ def _resolve_local_model_dir(model_dir: Path) -> Path:
     return model_dir
 
 
+def _resolve_safetensors_file(model_dir: Path) -> Path:
+    model_file = model_dir / "model.safetensors"
+    if model_file.exists() and model_file.is_file():
+        return model_file
+
+    candidates = sorted(path for path in model_dir.rglob("*.safetensors") if path.is_file())
+    if candidates:
+        return candidates[0]
+
+    raise FileNotFoundError(
+        f"No .safetensors checkpoint found under: {model_dir}. "
+        "Expected model.safetensors from google/timesfm-2.5-200m-pytorch."
+    )
+
+
 def _load_timesfm_2p5_model(model_dir: Path, resolved_device: str, forecast_length: int):
     model_dir = _resolve_local_model_dir(model_dir)
+    checkpoint_file = _resolve_safetensors_file(model_dir)
 
     if not hasattr(timesfm, "TimesFM_2p5_200M_torch"):
         raise AttributeError(
@@ -83,15 +100,29 @@ def _load_timesfm_2p5_model(model_dir: Path, resolved_device: str, forecast_leng
             "Please upgrade timesfm to a version supporting 2.5 PyTorch."
         )
 
-    model = timesfm.TimesFM_2p5_200M_torch.from_pretrained(
-        str(model_dir),
-        torch_compile=False,
-    )
+    # Avoid from_pretrained() to bypass incompatible huggingface_hub kwargs (e.g. proxies).
+    model = timesfm.TimesFM_2p5_200M_torch(torch_compile=False)
 
-    if hasattr(model, "to"):
-        model = model.to(resolved_device)
+    if hasattr(model, "model") and hasattr(model.model, "load_checkpoint"):
+        model.model.load_checkpoint(str(checkpoint_file), torch_compile=False)
+    elif hasattr(model, "load_checkpoint"):
+        model.load_checkpoint(str(checkpoint_file), torch_compile=False)
+    else:
+        raise AttributeError("Loaded TimesFM 2.5 class has no load_checkpoint method.")
+
+    if hasattr(model, "model") and hasattr(model.model, "to"):
+        target_device = torch.device(resolved_device)
+        model.model.to(target_device)
+        model.model.device = target_device
+        if target_device.type == "cuda" and torch.cuda.is_available():
+            model.model.device_count = max(1, torch.cuda.device_count())
+        else:
+            model.model.device_count = 1
+
     if hasattr(model, "eval"):
         model.eval()
+    elif hasattr(model, "model") and hasattr(model.model, "eval"):
+        model.model.eval()
 
     if hasattr(timesfm, "ForecastConfig") and hasattr(model, "compile"):
         model.compile(
@@ -106,6 +137,21 @@ def _load_timesfm_2p5_model(model_dir: Path, resolved_device: str, forecast_leng
             )
         )
 
+    return model
+
+
+def _get_timesfm_2p5_model(resolved_device: str, forecast_length: int):
+    cache_key = (resolved_device, int(forecast_length))
+    model = _MODEL_CACHE.get(cache_key)
+    if model is not None:
+        return model
+
+    model = _load_timesfm_2p5_model(
+        model_dir=LOCAL_MODEL_DIR,
+        resolved_device=resolved_device,
+        forecast_length=int(forecast_length),
+    )
+    _MODEL_CACHE[cache_key] = model
     return model
 
 
@@ -133,8 +179,7 @@ def timesfm_2p5_200m_forecastor(dataframe, forecast_length, num_samples=100, fre
     if input_df[value_col].isna().any():
         raise ValueError("The value column must be numeric and cannot contain NaN after conversion.")
 
-    model = _load_timesfm_2p5_model(
-        model_dir=LOCAL_MODEL_DIR,
+    model = _get_timesfm_2p5_model(
         resolved_device=resolved_device,
         forecast_length=int(forecast_length),
     )

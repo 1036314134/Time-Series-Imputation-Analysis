@@ -16,7 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from data_processing.read_data import load_data_one_series
-from foundational_models.sundial.sundial_forecastor import sundial_forecastor
+from foundational_models.sundial.sundial_base_128m_forecastor import sundial_forecastor
 
 
 warnings.filterwarnings(

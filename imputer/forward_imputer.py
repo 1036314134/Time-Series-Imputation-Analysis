@@ -1,4 +1,4 @@
-def front_impute(raw_feature_df):
+def forward_impute(raw_feature_df):
     imputed_feature_df = raw_feature_df.copy()
     n_features = imputed_feature_df.shape[1]
 

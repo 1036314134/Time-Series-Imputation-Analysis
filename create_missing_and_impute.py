@@ -79,8 +79,8 @@ def use_imputer(data, missing_rate, missing_column, imputer_name, if_write=True)
             from imputer.mean_imputer import mean_impute
             data.imputed_feature_df = mean_impute(data.raw_feature_df)
         elif imputer_name == "front":
-            from imputer.front_imputer import front_impute
-            data.imputed_feature_df = front_impute(data.raw_feature_df)
+            from imputer.forward_imputer import forward_impute
+            data.imputed_feature_df = forward_impute(data.raw_feature_df)
         elif imputer_name == "knn":
             from imputer.knn_imputer import knn_impute
             data.imputed_feature_array = knn_impute(data.raw_feature_df)

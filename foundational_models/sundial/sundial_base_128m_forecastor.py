@@ -69,7 +69,7 @@ def sundial_forecastor(dataframe, forecast_length, num_samples=100, device=None)
     print(f"Using device: {device}")
 
     model = AutoModelForCausalLM.from_pretrained(
-        "./sundial_model",
+        "./sundial_base_128m",
         trust_remote_code=True,
     ).to(device)
     model.eval()

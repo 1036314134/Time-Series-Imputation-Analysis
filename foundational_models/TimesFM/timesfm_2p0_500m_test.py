@@ -19,8 +19,8 @@ from data_processing.read_data import load_data_one_series
 
 
 def _load_timesfm_forecastor():
-    module_path = Path(__file__).resolve().parent / "timesfm_2.0_500m_forecastor.py"
-    module_name = "timesfm_2_0_500m_forecastor_module"
+    module_path = Path(__file__).resolve().parent / "timesfm_2p0_500m_forecastor.py"
+    module_name = "timesfm_2p0_500m_forecastor_module"
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     if spec is None or spec.loader is None:
         raise ImportError(f"Cannot load module from: {module_path}")
@@ -28,13 +28,13 @@ def _load_timesfm_forecastor():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
-    if not hasattr(module, "timesfm_2_0_500m_forecastor"):
-        raise AttributeError("timesfm_2.0_500m_forecastor.py does not define timesfm_2_0_500m_forecastor.")
+    if not hasattr(module, "timesfm_2p0_500m_forecastor"):
+        raise AttributeError("timesfm_2p0_500m_forecastor.py does not define timesfm_2p0_500m_forecastor.")
 
-    return module.timesfm_2_0_500m_forecastor
+    return module.timesfm_2p0_500m_forecastor
 
 
-timesfm_2_0_500m_forecastor = _load_timesfm_forecastor()
+timesfm_2p0_500m_forecastor = _load_timesfm_forecastor()
 
 
 def set_random_seed(random_seed: int) -> None:
@@ -65,6 +65,7 @@ def sliding_window_forecast_test(
     forecast_window: int,
     num_samples: int = 100,
     freq: str | None = None,
+    device: str | None = None,
     random_seed: int = 42,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     if lookback_window <= 0:
@@ -108,11 +109,12 @@ def sliding_window_forecast_test(
         prediction_start = test_start + offset
         prediction_end = prediction_start + current_window_size - 1
 
-        forecast_df = timesfm_2_0_500m_forecastor(
+        forecast_df = timesfm_2p0_500m_forecastor(
             dataframe=history_df,
             forecast_length=forecast_window,
             num_samples=num_samples,
             freq=freq,
+            device=device,
         ).iloc[:current_window_size].reset_index(drop=True)
 
         truth_df = test_df.iloc[offset:offset + current_window_size].reset_index(drop=True)
@@ -155,12 +157,13 @@ def save_dataframe_to_csv(dataframe: pd.DataFrame, output_csv: str | Path) -> No
     dataframe.to_csv(output_path, index=False)
 
 
-def test_timesfm_2_0_500m_forecastor(
+def test_timesfm_2p0_500m_forecastor(
     csv_relative_path,
     lookback_window: int = 2880,
     forecast_window: int = 720,
     num_samples: int = 100,
     freq: str | None = None,
+    device: str | None = None,
     random_seed: int = 42,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     return sliding_window_forecast_test(
@@ -169,12 +172,13 @@ def test_timesfm_2_0_500m_forecastor(
         forecast_window=forecast_window,
         num_samples=num_samples,
         freq=freq,
+        device=device,
         random_seed=random_seed,
     )
 
 
 if __name__ == "__main__":
-    result_df, window_df = test_timesfm_2_0_500m_forecastor(csv_relative_path="dataset/exchange_rate/exchange_rate.csv")
+    result_df, window_df = test_timesfm_2p0_500m_forecastor(csv_relative_path="dataset/exchange_rate/exchange_rate.csv")
     print(f"Generated {len(result_df)} predictions across {len(window_df)} windows.")
-    save_dataframe_to_csv(result_df, "results/exchange_rate_predictions_timesfm_2_0_500m.csv")
-    save_dataframe_to_csv(window_df, "results/exchange_rate_windows_timesfm_2_0_500m.csv")
+    save_dataframe_to_csv(result_df, "results/exchange_rate_predictions_timesfm_2p0_500m.csv")
+    save_dataframe_to_csv(window_df, "results/exchange_rate_windows_timesfm_2p0_500m.csv")

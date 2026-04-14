@@ -165,5 +165,5 @@ def test_sundial_forecastor(
 if __name__ == "__main__":
     result_df, window_df = test_sundial_forecastor(csv_relative_path="dataset/exchange_rate/exchange_rate.csv")
     print(f"Generated {len(result_df)} predictions across {len(window_df)} windows.")
-    save_dataframe_to_csv(result_df, "results/exchange_rate_predictions.csv")
-    save_dataframe_to_csv(window_df, "results/exchange_rate_windows.csv")
+    save_dataframe_to_csv(result_df, "results/exchange_rate_predictions_sundial_base_128m.csv")
+    save_dataframe_to_csv(window_df, "results/exchange_rate_windows_sundial_base_128m.csv")

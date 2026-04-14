@@ -2,6 +2,7 @@ import inspect
 from pathlib import Path
 
 import pandas as pd
+import torch
 
 try:
     import timesfm
@@ -11,7 +12,7 @@ except ImportError as exc:
     ) from exc
 
 
-LOCAL_MODEL_DIR = Path(__file__).resolve().parent / "timesfm_2.0_500m_pytorch"
+LOCAL_MODEL_DIR = Path(__file__).resolve().parent / "timesfm_2p0_500m_pytorch"
 
 
 def _infer_future_timestamps(timestamp_series, forecast_length):
@@ -75,7 +76,7 @@ def _resolve_checkpoint_file(model_dir: Path) -> Path:
     if not model_dir.exists() or not any(model_dir.iterdir()):
         raise FileNotFoundError(
             f"Local model directory not found or empty: {model_dir}. "
-            "Run download_timesfm_2.0_500m.py first."
+            "Run download_timesfm_2p0_500m.py first."
         )
 
     preferred_names = [
@@ -125,7 +126,21 @@ def _build_local_checkpoint(model_dir: Path):
     )
 
 
-def timesfm_2_0_500m_forecastor(dataframe, forecast_length, num_samples=100, freq=None):
+def _resolve_device(device):
+    if device is None:
+        return "cuda" if torch.cuda.is_available() else "cpu"
+
+    device_str = str(device).lower()
+    if device_str.startswith("cuda") and not torch.cuda.is_available():
+        print("CUDA is requested but not available. Falling back to CPU.")
+        return "cpu"
+
+    if device_str.startswith("cuda"):
+        return str(device)
+    return "cpu"
+
+
+def timesfm_2p0_500m_forecastor(dataframe, forecast_length, num_samples=100, freq=None, device=None):
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("Input must be a pandas DataFrame.")
 
@@ -137,6 +152,10 @@ def timesfm_2_0_500m_forecastor(dataframe, forecast_length, num_samples=100, fre
 
     if num_samples <= 0:
         raise ValueError("num_samples must be a positive integer.")
+
+    resolved_device = _resolve_device(device)
+    backend = "gpu" if str(resolved_device).lower().startswith("cuda") else "cpu"
+    print(f"Using device: {resolved_device}")
 
     input_df = dataframe.iloc[:, [0, 1]].copy().reset_index(drop=True)
     timestamp_col = input_df.columns[0]
@@ -163,7 +182,7 @@ def timesfm_2_0_500m_forecastor(dataframe, forecast_length, num_samples=100, fre
 
     model = timesfm.TimesFm(
         hparams=timesfm.TimesFmHparams(
-            backend="cpu",
+            backend=backend,
             per_core_batch_size=32,
             horizon_len=int(forecast_length),
             input_patch_len=32,
@@ -187,7 +206,7 @@ def timesfm_2_0_500m_forecastor(dataframe, forecast_length, num_samples=100, fre
         raise RuntimeError("Model returned fewer forecast points than requested forecast_length.")
 
     # Keep API compatibility with the same signature as other forecastors.
-    # TimesFM 2.0 point forecast is deterministic; num_samples does not change the output.
+    # TimesFM 2p0 point forecast is deterministic; num_samples does not change the output.
     forecast_mean = pd.Series(single_forecast, dtype="float64").to_numpy()
     future_timestamps = _infer_future_timestamps(input_df[timestamp_col], forecast_length)
 

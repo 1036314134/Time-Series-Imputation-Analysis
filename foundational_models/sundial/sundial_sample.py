@@ -1,14 +1,26 @@
 import torch
 from transformers import AutoModelForCausalLM
-import os
+from huggingface_hub import snapshot_download
 
-os.environ["HTTP_PROXY"] = "http://127.0.0.1:7890"
-os.environ["HTTPS_PROXY"] = "http://127.0.0.1:7890"
 
+# snapshot_download(
+#     repo_id="thuml/sundial-base-128m",
+#     local_dir="./sundial_model",
+#     proxies={
+#         "http": "http://127.0.0.1:7890",
+#         "https": "http://127.0.0.1:7890",
+#     }
+# )
+
+model = AutoModelForCausalLM.from_pretrained(
+    "./sundial_model",
+    trust_remote_code=True
+)
 
 # load pretrain model
 # supports different lookback/forecast lengths
-model = AutoModelForCausalLM.from_pretrained('thuml/sundial-base-128m', trust_remote_code=True)
+# model = AutoModelForCausalLM.from_pretrained('thuml/sundial-base-128m', trust_remote_code=True)
+
 
 # prepare input
 batch_size, lookback_length = 1, 2880

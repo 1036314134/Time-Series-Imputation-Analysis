@@ -75,10 +75,7 @@ def use_missing_creator(df_last,
 
 def use_imputer(data, missing_rate, missing_column, imputer_name, if_write=True):
     if if_write:
-        if imputer_name == "delete":
-            from imputer.delete import delete_missing
-            data.imputed_feature_df = delete_missing(data.raw_feature_df)
-        elif imputer_name == "mean":
+        if imputer_name == "mean":
             from imputer.mean_imputer import mean_impute
             data.imputed_feature_df = mean_impute(data.raw_feature_df)
         elif imputer_name == "front":

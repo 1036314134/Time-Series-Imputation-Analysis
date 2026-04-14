@@ -5,11 +5,14 @@ import pandas as pd
 import torch
 
 try:
-    import timesfm
-except ImportError as exc:
-    raise ImportError(
-        "timesfm package is required. Install an archived 2.0-compatible release, e.g. `pip install timesfm==1.3.0`."
-    ) from exc
+    import timesfm as _timesfm_pkg
+except Exception:
+    _timesfm_pkg = None
+
+try:
+    import transformers as _transformers_pkg
+except Exception:
+    _transformers_pkg = None
 
 
 LOCAL_MODEL_DIR = Path(__file__).resolve().parent / "timesfm_2p0_500m_pytorch"
@@ -57,7 +60,6 @@ def _freq_to_category(freq):
         return 0
 
     freq_upper = str(freq).upper()
-
     high_freq = ("T", "MIN", "H", "D", "B", "U", "S")
     medium_freq = ("W", "M", "MS", "BM", "BMS")
     low_freq = ("Q", "Y", "A", "AS")
@@ -68,17 +70,31 @@ def _freq_to_category(freq):
         return 1
     if freq_upper.startswith(low_freq):
         return 2
-
     return 0
 
 
-def _resolve_checkpoint_file(model_dir: Path) -> Path:
+def _resolve_device(device):
+    if device is None:
+        return "cuda" if torch.cuda.is_available() else "cpu"
+
+    device_str = str(device).lower()
+    if device_str.startswith("cuda") and not torch.cuda.is_available():
+        print("CUDA is requested but not available. Falling back to CPU.")
+        return "cpu"
+    if device_str.startswith("cuda"):
+        return str(device)
+    return "cpu"
+
+
+def _ensure_local_model_dir(model_dir: Path):
     if not model_dir.exists() or not any(model_dir.iterdir()):
         raise FileNotFoundError(
             f"Local model directory not found or empty: {model_dir}. "
             "Run download_timesfm_2p0_500m.py first."
         )
 
+
+def _resolve_checkpoint_file(model_dir: Path) -> Path:
     preferred_names = [
         "torch_model.ckpt",
         "pytorch_model.bin",
@@ -92,10 +108,9 @@ def _resolve_checkpoint_file(model_dir: Path) -> Path:
             return candidate
 
     for pattern in ("*.ckpt", "*.bin", "*.pt", "*.pth"):
-        candidates = sorted(model_dir.rglob(pattern))
-        file_candidates = [path for path in candidates if path.is_file()]
-        if file_candidates:
-            return file_candidates[0]
+        candidates = sorted(path for path in model_dir.rglob(pattern) if path.is_file())
+        if candidates:
+            return candidates[0]
 
     raise FileNotFoundError(
         f"No checkpoint file found under: {model_dir}. "
@@ -103,41 +118,134 @@ def _resolve_checkpoint_file(model_dir: Path) -> Path:
     )
 
 
-def _build_local_checkpoint(model_dir: Path):
-    checkpoint_file = _resolve_checkpoint_file(model_dir)
-
-    signature = inspect.signature(timesfm.TimesFmCheckpoint)
-    parameter_names = set(signature.parameters)
-    checkpoint_file_str = str(checkpoint_file)
-    model_dir_str = str(model_dir)
-
-    if "path" in parameter_names:
-        return timesfm.TimesFmCheckpoint(path=checkpoint_file_str)
-    if "checkpoint_path" in parameter_names:
-        return timesfm.TimesFmCheckpoint(checkpoint_path=checkpoint_file_str)
-    if "checkpoint_dir" in parameter_names:
-        return timesfm.TimesFmCheckpoint(checkpoint_dir=model_dir_str)
-    if "local_dir" in parameter_names:
-        return timesfm.TimesFmCheckpoint(local_dir=model_dir_str)
-
-    raise TypeError(
-        "Unsupported TimesFmCheckpoint signature for local loading. "
-        f"Available parameters: {sorted(parameter_names)}"
+def _supports_legacy_timesfm():
+    return (
+        _timesfm_pkg is not None
+        and hasattr(_timesfm_pkg, "TimesFm")
+        and hasattr(_timesfm_pkg, "TimesFmHparams")
+        and hasattr(_timesfm_pkg, "TimesFmCheckpoint")
     )
 
 
-def _resolve_device(device):
-    if device is None:
-        return "cuda" if torch.cuda.is_available() else "cpu"
+def _build_legacy_checkpoint(model_dir: Path):
+    checkpoint_file = _resolve_checkpoint_file(model_dir)
+    signature = inspect.signature(_timesfm_pkg.TimesFmCheckpoint)
+    param_names = set(signature.parameters)
+    checkpoint_file_str = str(checkpoint_file)
+    model_dir_str = str(model_dir)
 
-    device_str = str(device).lower()
-    if device_str.startswith("cuda") and not torch.cuda.is_available():
-        print("CUDA is requested but not available. Falling back to CPU.")
-        return "cpu"
+    if "path" in param_names:
+        return _timesfm_pkg.TimesFmCheckpoint(path=checkpoint_file_str)
+    if "checkpoint_path" in param_names:
+        return _timesfm_pkg.TimesFmCheckpoint(checkpoint_path=checkpoint_file_str)
+    if "checkpoint_dir" in param_names:
+        return _timesfm_pkg.TimesFmCheckpoint(checkpoint_dir=model_dir_str)
+    if "local_dir" in param_names:
+        return _timesfm_pkg.TimesFmCheckpoint(local_dir=model_dir_str)
 
-    if device_str.startswith("cuda"):
-        return str(device)
-    return "cpu"
+    raise TypeError(
+        "Unsupported TimesFmCheckpoint signature for legacy branch. "
+        f"Available parameters: {sorted(param_names)}"
+    )
+
+
+def _build_legacy_hparams(backend: str, forecast_length: int):
+    desired = {
+        "backend": backend,
+        "per_core_batch_size": 32,
+        "horizon_len": int(forecast_length),
+        "input_patch_len": 32,
+        "output_patch_len": 128,
+        "num_layers": 50,
+        "model_dims": 1280,
+        "use_positional_embedding": False,
+    }
+
+    signature = inspect.signature(_timesfm_pkg.TimesFmHparams)
+    filtered = {k: v for k, v in desired.items() if k in signature.parameters}
+    return _timesfm_pkg.TimesFmHparams(**filtered)
+
+
+def _forecast_with_legacy_timesfm(history_values, freq_category, forecast_length, backend):
+    checkpoint = _build_legacy_checkpoint(LOCAL_MODEL_DIR)
+    hparams = _build_legacy_hparams(backend=backend, forecast_length=forecast_length)
+    model = _timesfm_pkg.TimesFm(hparams=hparams, checkpoint=checkpoint)
+
+    point_forecast, _ = model.forecast(
+        inputs=[history_values],
+        freq=[freq_category],
+    )
+    output = point_forecast[0][:forecast_length]
+    if len(output) < forecast_length:
+        raise RuntimeError("Legacy TimesFM returned fewer points than forecast_length.")
+    return output
+
+
+def _resolve_transformers_timesfm_model_class():
+    if _transformers_pkg is None:
+        return None
+
+    try:
+        from transformers import TimesFmModelForPrediction as cls  # type: ignore
+
+        return cls
+    except Exception:
+        pass
+
+    try:
+        from transformers.models.timesfm.modeling_timesfm import TimesFmModelForPrediction as cls  # type: ignore
+
+        return cls
+    except Exception:
+        return None
+
+
+def _load_transformers_model(resolved_device: str):
+    model_class = _resolve_transformers_timesfm_model_class()
+    if model_class is None:
+        raise ImportError(
+            "TimesFM model class is unavailable in current environment. "
+            f"timesfm package loaded: {_timesfm_pkg is not None}, "
+            f"transformers version: {getattr(_transformers_pkg, '__version__', 'missing')}."
+        )
+
+    model = model_class.from_pretrained(
+        str(LOCAL_MODEL_DIR),
+        local_files_only=True,
+        trust_remote_code=True,
+    )
+    model = model.to(resolved_device)
+    model.eval()
+    return model
+
+
+def _forecast_with_transformers(model, history_values, freq_category, forecast_length, resolved_device):
+    context = torch.tensor(history_values, dtype=torch.float32, device=resolved_device).unsqueeze(0)
+    freq_tensor = torch.tensor([freq_category], dtype=torch.long, device=resolved_device)
+
+    predictions = []
+    max_context = 2048
+
+    while len(predictions) < forecast_length:
+        input_context = context[:, -max_context:]
+        with torch.no_grad():
+            outputs = model(past_values=input_context, freq=freq_tensor)
+
+        if not hasattr(outputs, "mean_predictions"):
+            raise RuntimeError("Transformers TimesFM output does not contain mean_predictions.")
+
+        chunk = outputs.mean_predictions[0].detach().to("cpu").numpy()
+        if len(chunk) == 0:
+            raise RuntimeError("Transformers TimesFM returned an empty forecast chunk.")
+
+        remaining = forecast_length - len(predictions)
+        chunk_to_use = chunk[:remaining]
+        predictions.extend(chunk_to_use.tolist())
+
+        append_chunk = torch.tensor(chunk_to_use, dtype=torch.float32, device=resolved_device).unsqueeze(0)
+        context = torch.cat([context, append_chunk], dim=1)
+
+    return predictions
 
 
 def timesfm_2p0_500m_forecastor(dataframe, forecast_length, num_samples=100, freq=None, device=None):
@@ -153,9 +261,7 @@ def timesfm_2p0_500m_forecastor(dataframe, forecast_length, num_samples=100, fre
     if num_samples <= 0:
         raise ValueError("num_samples must be a positive integer.")
 
-    resolved_device = _resolve_device(device)
-    backend = "gpu" if str(resolved_device).lower().startswith("cuda") else "cpu"
-    print(f"Using device: {resolved_device}")
+    _ensure_local_model_dir(LOCAL_MODEL_DIR)
 
     input_df = dataframe.iloc[:, [0, 1]].copy().reset_index(drop=True)
     timestamp_col = input_df.columns[0]
@@ -169,46 +275,41 @@ def timesfm_2p0_500m_forecastor(dataframe, forecast_length, num_samples=100, fre
     if freq is None:
         if parsed_timestamps.notna().all():
             inferred_freq = pd.infer_freq(pd.DatetimeIndex(parsed_timestamps))
-            if inferred_freq is not None:
-                freq = inferred_freq
-            else:
-                freq = "D"
+            freq = inferred_freq if inferred_freq is not None else "D"
         else:
             freq = "D"
 
     freq_category = _freq_to_category(freq)
+    resolved_device = _resolve_device(device)
+    backend = "gpu" if str(resolved_device).lower().startswith("cuda") else "cpu"
+    print(f"Using device: {resolved_device}")
 
-    checkpoint = _build_local_checkpoint(LOCAL_MODEL_DIR)
+    history_values = input_df[value_col].to_numpy(dtype=float)
 
-    model = timesfm.TimesFm(
-        hparams=timesfm.TimesFmHparams(
+    if _supports_legacy_timesfm():
+        print("TimesFM backend: legacy timesfm API")
+        forecast_values = _forecast_with_legacy_timesfm(
+            history_values=history_values,
+            freq_category=freq_category,
+            forecast_length=int(forecast_length),
             backend=backend,
-            per_core_batch_size=32,
-            horizon_len=int(forecast_length),
-            input_patch_len=32,
-            output_patch_len=128,
-            num_layers=50,
-            model_dims=1280,
-            use_positional_embedding=False,
-        ),
-        checkpoint=checkpoint,
-    )
+        )
+    else:
+        print("TimesFM backend: transformers API")
+        model = _load_transformers_model(resolved_device)
+        forecast_values = _forecast_with_transformers(
+            model=model,
+            history_values=history_values,
+            freq_category=freq_category,
+            forecast_length=int(forecast_length),
+            resolved_device=resolved_device,
+        )
 
-    point_forecast, _ = model.forecast(
-        inputs=[input_df[value_col].to_numpy(dtype=float)],
-        freq=[freq_category],
-    )
-
-    single_forecast = point_forecast[0]
-    single_forecast = single_forecast[:forecast_length]
-
-    if len(single_forecast) < forecast_length:
-        raise RuntimeError("Model returned fewer forecast points than requested forecast_length.")
-
-    # Keep API compatibility with the same signature as other forecastors.
-    # TimesFM 2p0 point forecast is deterministic; num_samples does not change the output.
-    forecast_mean = pd.Series(single_forecast, dtype="float64").to_numpy()
+    forecast_mean = pd.Series(forecast_values, dtype="float64").to_numpy()
     future_timestamps = _infer_future_timestamps(input_df[timestamp_col], forecast_length)
+
+    # Keep API compatibility with other forecastors. TimesFM point forecast is deterministic.
+    _ = num_samples
 
     return pd.DataFrame(
         {

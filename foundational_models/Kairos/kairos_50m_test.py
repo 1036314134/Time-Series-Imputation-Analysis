@@ -221,7 +221,7 @@ def save_dataframe_to_csv(dataframe: pd.DataFrame, output_csv: str | Path) -> No
 
 def use_kairos_50m_forecastor(
     csv_relative_path,
-    lookback_window: int = 2880,
+    lookback_window: int = 2048,
     forecast_window: int = 720,
     num_samples: int = 100,
     freq: str | None = None,

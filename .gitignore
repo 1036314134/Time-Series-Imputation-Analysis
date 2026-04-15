@@ -12,4 +12,6 @@
 /foundational_models/VisionTS/__pycache__
 /foundational_models/TimesFM/timesfm_2p0_500m_pytorch
 /foundational_models/TimesFM/timesfm_2p5_200m_pytorch
+/foundational_models/TimesFM/timesfm_1p0_200m-pytorch
 /foundational_models/TimesFM/__pycache__
+/foundational_models/TimesFM/timesfm_1p0_200m

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
 
 import numpy as np
@@ -8,13 +7,12 @@ import pandas as pd
 import torch
 
 try:
-    from transformers import AutoModel
+    from visionts import VisionTSpp, freq_to_seasonality_list
 except ImportError as exc:
-    raise ImportError("transformers package is required for VisionTSpp.") from exc
+    raise ImportError("visionts package is required for VisionTSpp.") from exc
 
 
 LOCAL_MODEL_DIR = Path(__file__).resolve().parent / "VisionTSpp"
-MODEL_REPO_ID = "Lefei/VisionTSpp"
 _MODEL_CACHE = {}
 
 
@@ -78,30 +76,85 @@ def _resolve_local_model_dir(model_dir: Path) -> Path:
     )
 
 
+def _select_local_checkpoint(model_dir: Path) -> Path:
+    candidate_names = [
+        "visiontspp_model.ckpt",
+        "visiontspp_base.ckpt",
+        "visiontspp_large.ckpt",
+        "visiontspp_base_gifteval_no_leakage.ckpt",
+        "visiontspp_large_gifteval_no_leakage.ckpt",
+    ]
+
+    for name in candidate_names:
+        candidate = model_dir / name
+        if candidate.is_file():
+            return candidate
+
+    checkpoints = sorted(model_dir.glob("*.ckpt"))
+    if checkpoints:
+        return checkpoints[0]
+
+    raise FileNotFoundError(
+        f"No VisionTSpp checkpoint file was found in {model_dir}."
+    )
+
+
+def _infer_arch_from_checkpoint(ckpt_path: Path) -> str:
+    checkpoint = torch.load(str(ckpt_path), map_location="cpu")
+    state_dict = checkpoint.get("model", checkpoint)
+    qkv_weight = state_dict.get("blocks.0.attn.qkv.weight")
+
+    if qkv_weight is None or len(qkv_weight.shape) != 2:
+        raise RuntimeError(
+            f"Unable to infer VisionTSpp architecture from checkpoint: {ckpt_path}"
+        )
+
+    embed_dim = int(qkv_weight.shape[1])
+    arch_by_embed_dim = {
+        768: "mae_base",
+        1024: "mae_large",
+        1280: "mae_huge",
+    }
+    if embed_dim not in arch_by_embed_dim:
+        raise RuntimeError(
+            f"Unsupported VisionTSpp embed_dim {embed_dim} in checkpoint: {ckpt_path}"
+        )
+    return arch_by_embed_dim[embed_dim]
+
+
+def _resolve_periodicity(freq: str | None) -> int:
+    if not freq:
+        return 1
+
+    try:
+        candidates = freq_to_seasonality_list(freq)
+    except Exception:
+        return 1
+
+    for candidate in candidates:
+        candidate_int = int(candidate)
+        if candidate_int > 1:
+            return candidate_int
+    return 1
+
+
 def _load_visiontspp_model(model_dir: Path, resolved_device: str):
     model_dir = _resolve_local_model_dir(model_dir)
-    cache_key = (str(model_dir), resolved_device)
+    ckpt_path = _select_local_checkpoint(model_dir)
+    arch = _infer_arch_from_checkpoint(ckpt_path)
+    cache_key = (str(ckpt_path), arch, resolved_device)
     model = _MODEL_CACHE.get(cache_key)
     if model is not None:
         return model
 
-    signature = inspect.signature(AutoModel.from_pretrained)
-    kwargs = {"trust_remote_code": True}
-    if "local_files_only" in signature.parameters:
-        kwargs["local_files_only"] = True
-    if "torch_dtype" in signature.parameters:
-        kwargs["torch_dtype"] = torch.bfloat16 if resolved_device.startswith("cuda") else torch.float32
-
-    try:
-        model = AutoModel.from_pretrained(str(model_dir), **kwargs)
-    except Exception:
-        kwargs.pop("local_files_only", None)
-        model = AutoModel.from_pretrained(MODEL_REPO_ID, **kwargs)
-
-    if hasattr(model, "to"):
-        model = model.to(resolved_device)
-    if hasattr(model, "eval"):
-        model.eval()
+    model = VisionTSpp(
+        arch=arch,
+        ckpt_path=str(ckpt_path),
+        load_ckpt=True,
+        quantile=True,
+    )
+    model = model.to(resolved_device)
+    model.eval()
 
     _MODEL_CACHE[cache_key] = model
     return model
@@ -110,6 +163,10 @@ def _load_visiontspp_model(model_dir: Path, resolved_device: str):
 def _normalize_prediction_output(output, forecast_length: int):
     if isinstance(output, tuple):
         output = output[0]
+    if isinstance(output, list):
+        if len(output) == 0:
+            raise RuntimeError("VisionTSpp returned an empty list.")
+        return _normalize_prediction_output(output[0], forecast_length)
     if isinstance(output, dict):
         for key in ("mean", "pred", "prediction", "predictions", "forecast", "point_forecast", "yhat", "samples"):
             if key in output:
@@ -155,43 +212,20 @@ def _normalize_prediction_output(output, forecast_length: int):
 
 
 def _predict_with_visiontspp(model, history_values: np.ndarray, forecast_length: int, num_samples: int):
-    methods = ["forecast", "predict", "generate", "forward"]
-    call_attempts = [
-        {"history": history_values, "prediction_length": int(forecast_length), "num_samples": int(num_samples)},
-        {"history": history_values, "horizon": int(forecast_length), "num_samples": int(num_samples)},
-        {"inputs": [history_values], "prediction_length": int(forecast_length), "num_samples": int(num_samples)},
-        {"inputs": [history_values], "horizon": int(forecast_length), "num_samples": int(num_samples)},
-        {"input_ids": torch.tensor(history_values, dtype=torch.float32).unsqueeze(0), "max_new_tokens": int(forecast_length)},
-        {"x": torch.tensor(history_values, dtype=torch.float32).unsqueeze(0), "prediction_length": int(forecast_length)},
-        {"x": torch.tensor(history_values, dtype=torch.float32).unsqueeze(0), "horizon": int(forecast_length)},
-        {"prediction_length": int(forecast_length)},
-        {"horizon": int(forecast_length)},
-        {},
-    ]
-
-    errors = []
-    for method_name in methods:
-        if not hasattr(model, method_name):
-            continue
-        method = getattr(model, method_name)
-        for kwargs in call_attempts:
-            try:
-                with torch.no_grad():
-                    output = method(**kwargs)
-                values = _normalize_prediction_output(output, int(forecast_length))
-                if len(values) >= int(forecast_length):
-                    return values[: int(forecast_length)]
-            except TypeError as exc:
-                errors.append(f"{method_name}({list(kwargs.keys())}): {exc}")
-                continue
-            except Exception as exc:
-                errors.append(f"{method_name}({list(kwargs.keys())}): {exc}")
-                continue
-
-    raise RuntimeError(
-        "VisionTSpp inference failed with all known method signatures. "
-        f"Error samples: {errors[:3]}"
+    _ = num_samples
+    model_device = next(model.parameters()).device
+    history_tensor = (
+        torch.tensor(history_values, dtype=torch.float32, device=model_device)
+        .reshape(1, int(len(history_values)), 1)
     )
+
+    with torch.no_grad():
+        output = model(history_tensor)
+
+    values = _normalize_prediction_output(output, int(forecast_length))
+    if len(values) < int(forecast_length):
+        raise RuntimeError("VisionTSpp returned fewer forecast points than requested forecast_length.")
+    return values[: int(forecast_length)]
 
 
 def visiontspp_forecastor(dataframe, forecast_length, num_samples=100, freq=None, device=None):
@@ -221,6 +255,11 @@ def visiontspp_forecastor(dataframe, forecast_length, num_samples=100, freq=None
     model = _load_visiontspp_model(
         model_dir=LOCAL_MODEL_DIR,
         resolved_device=resolved_device,
+    )
+    model.update_config(
+        context_len=int(len(input_df)),
+        pred_len=int(forecast_length),
+        periodicity=_resolve_periodicity(freq),
     )
 
     history_values = input_df[value_col].to_numpy(dtype="float64")

@@ -1,2 +1,9 @@
 .idea/MTSClean.iml
 /.idea
+/foundational_models/sundial/sundial_base_128m
+/foundational_models/TimesFM/timesfm_2p0_500m_pytorch
+/foundational_models/TimesFM/timesfm_2p5_200m_pytorch
+/foundational_models/chronos/chronos_2
+/foundational_models/Kairos/Kairos_23m
+/foundational_models/moirai/moirai_2p0_r_small
+/foundational_models/VisionTS/VisionTSpp

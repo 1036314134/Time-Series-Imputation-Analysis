@@ -1,6 +1,6 @@
 # Time-Series-Imputation-Analysis
 
-### requirements:
+## requirements:
 
 注意torch版本应与cuda版本对应。可去torch官网下载对应版本。例如：
 
@@ -35,10 +35,14 @@ timesfm==2.0.0
 django-layers-hr
 ```
 
-### 基础模型运行部分：
+## 基础模型运行部分：
 所有的基础模型均为huggingface上对应版本的checkpoint。目前的逻辑为先将模型文件本地保存，再调用本地模型运行。
 
-#### chronos:
+为了使得模型下载更快，建议：
+
+`pip install hf_xet`
+
+### chronos:
 
 运行chronos_2需要：
 
@@ -47,13 +51,13 @@ pip install "chronos-forecasting>=2.0"
 `pip install -U sagemaker`
 ```
 
-#### karios:
+### karios:
 
 运行Karios_23m需要：
 
 `pip install tsfm`
 
-#### moirai:
+### moirai:
 
 运行moirai_2p0_r_small需要引入uni2ts库，目前没法pip获取，可从github上clone下来后安装：
 
@@ -63,14 +67,14 @@ cd uni2ts
 pip install -e '.[notebook]'
 ```
 
-#### sundial:
+### sundial:
 
 运行sundial_base_128m需要：
 
 `pip install transformers==4.40.1`
 
 
-#### TimesFM:
+### TimesFM:
 
 运行timesfm_2p0_500m需要1.3版本的timesfm库,默认pip得到的就是：
 
@@ -86,7 +90,7 @@ pip install -e .
 注意：timesfm2.0版本无法向下兼容，因此运行timesfm2.5版本模型和老版本模型需要不同的虚拟环境
 
 
-#### VisionTS
+### VisionTS
 
 运行VisionTSpp需要：
 `pip install visionts`

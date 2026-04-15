@@ -83,5 +83,11 @@ git clone https://github.com/google-research/timesfm.git
 cd timesfm
 pip install -e .
 ```
-
 注意：timesfm2.0版本无法向下兼容，因此运行timesfm2.5版本模型和老版本模型需要不同的虚拟环境
+
+
+#### VisionTS
+
+运行VisionTSpp需要：
+`pip install visionts`
+

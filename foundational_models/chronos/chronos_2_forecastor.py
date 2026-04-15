@@ -84,21 +84,29 @@ def _load_chronos_2_model(model_dir: Path, resolved_device: str):
 
     pipeline_cls = chronos.Chronos2Pipeline
     device_map = "cuda" if str(resolved_device).lower().startswith("cuda") else "cpu"
-    torch_dtype = torch.bfloat16 if device_map == "cuda" else torch.float32
+    dtype = torch.bfloat16 if device_map == "cuda" else torch.float32
 
     try:
         return pipeline_cls.from_pretrained(
             str(model_dir),
             local_files_only=True,
             device_map=device_map,
-            torch_dtype=torch_dtype,
+            dtype=dtype,
         )
     except TypeError:
-        return pipeline_cls.from_pretrained(
-            str(model_dir),
-            device_map=device_map,
-            torch_dtype=torch_dtype,
-        )
+        try:
+            return pipeline_cls.from_pretrained(
+                str(model_dir),
+                local_files_only=True,
+                device_map=device_map,
+                torch_dtype=dtype,
+            )
+        except TypeError:
+            return pipeline_cls.from_pretrained(
+                str(model_dir),
+                device_map=device_map,
+                torch_dtype=dtype,
+            )
 
 
 def _get_chronos_2_model(resolved_device: str):
@@ -114,47 +122,43 @@ def _get_chronos_2_model(resolved_device: str):
     return model
 
 
-def _forecast_with_predict(model, history_values, forecast_length: int, num_samples: int):
+def _forecast_with_predict(model, history_values, forecast_length: int):
     if not hasattr(model, "predict"):
         raise AttributeError("Loaded Chronos-2 pipeline does not provide predict().")
 
-    context = torch.tensor(history_values, dtype=torch.float32)
+    inputs = [torch.tensor(history_values, dtype=torch.float32)]
 
     with torch.no_grad():
         forecast = model.predict(
-            context=context,
+            inputs=inputs,
             prediction_length=int(forecast_length),
-            num_samples=int(num_samples),
         )
+        pred_tensor = torch.as_tensor(forecast[0], dtype=torch.float32)
 
-    pred_tensor = torch.as_tensor(forecast, dtype=torch.float32)
-
-    if pred_tensor.ndim == 1:
-        output = pred_tensor
-    elif pred_tensor.ndim == 2:
-        if pred_tensor.shape[1] == int(forecast_length):
+        if pred_tensor.ndim == 3:
+            # Chronos-2 returns (n_variates, n_quantiles, prediction_length).
+            if pred_tensor.shape[0] != 1:
+                raise RuntimeError(
+                    "Only univariate forecasts are supported, but Chronos-2 returned multiple variates."
+                )
+            output = pred_tensor.mean(dim=1).squeeze(0)
+        elif pred_tensor.ndim == 2:
+            if pred_tensor.shape[-1] != int(forecast_length):
+                raise RuntimeError("Chronos-2 returned an unexpected 2D prediction shape.")
             output = pred_tensor.mean(dim=0)
-        elif pred_tensor.shape[0] == int(forecast_length):
-            output = pred_tensor[:, 0]
+        elif pred_tensor.ndim == 1:
+            output = pred_tensor
         else:
-            output = pred_tensor.flatten()[: int(forecast_length)]
-    elif pred_tensor.ndim >= 3:
-        if pred_tensor.shape[0] == 1:
-            output = pred_tensor[0].mean(dim=0)
-        elif pred_tensor.shape[1] == 1:
-            output = pred_tensor[:, 0, :].mean(dim=0)
-        else:
-            output = pred_tensor.mean(dim=1)[0]
-    else:
-        raise RuntimeError("Chronos-2 returned an unexpected prediction shape.")
+            raise RuntimeError("Chronos-2 returned an unexpected prediction shape.")
 
-    output = output.flatten()[: int(forecast_length)]
-    if len(output) < int(forecast_length):
+        output = output.flatten()[: int(forecast_length)]
+
+    if output.numel() < int(forecast_length):
         raise RuntimeError("Model returned fewer forecast points than requested forecast_length.")
     return output.detach().cpu().numpy()
 
 
-def chronos_2_forecastor(dataframe, forecast_length, num_samples=100, freq=None, device=None):
+def chronos_2_forecastor(dataframe, forecast_length, freq=None, device=None):
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("Input must be a pandas DataFrame.")
 
@@ -163,9 +167,6 @@ def chronos_2_forecastor(dataframe, forecast_length, num_samples=100, freq=None,
 
     if forecast_length <= 0:
         raise ValueError("forecast_length must be a positive integer.")
-
-    if num_samples <= 0:
-        raise ValueError("num_samples must be a positive integer.")
 
     resolved_device = _resolve_device(device)
     print(f"Using device: {resolved_device}")
@@ -183,7 +184,6 @@ def chronos_2_forecastor(dataframe, forecast_length, num_samples=100, freq=None,
         model=model,
         history_values=input_df[value_col].to_numpy(dtype=float),
         forecast_length=int(forecast_length),
-        num_samples=int(num_samples),
     )
 
     # Keep API compatibility with other forecastors.

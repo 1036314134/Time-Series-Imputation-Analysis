@@ -63,7 +63,6 @@ def sliding_window_forecast_test(
     csv_relative_path: str,
     lookback_window: int,
     forecast_window: int,
-    num_samples: int = 100,
     freq: str | None = None,
     device: str | None = None,
     random_seed: int = 42,
@@ -112,7 +111,6 @@ def sliding_window_forecast_test(
         forecast_df = chronos_2_forecastor(
             dataframe=history_df,
             forecast_length=forecast_window,
-            num_samples=num_samples,
             freq=freq,
             device=device,
         ).iloc[:current_window_size].reset_index(drop=True)
@@ -161,7 +159,6 @@ def use_chronos_2_forecastor(
     csv_relative_path,
     lookback_window: int = 2880,
     forecast_window: int = 720,
-    num_samples: int = 100,
     freq: str | None = None,
     device: str | None = None,
     random_seed: int = 42,
@@ -170,7 +167,6 @@ def use_chronos_2_forecastor(
         csv_relative_path=csv_relative_path,
         lookback_window=lookback_window,
         forecast_window=forecast_window,
-        num_samples=num_samples,
         freq=freq,
         device=device,
         random_seed=random_seed,

@@ -91,6 +91,8 @@ def _load_kairos_model(model_dir: Path, resolved_device: str):
     kwargs = {}
     if "local_files_only" in signature.parameters:
         kwargs["local_files_only"] = True
+    if "trust_remote_code" in signature.parameters:
+        kwargs["trust_remote_code"] = True
     if "device_map" in signature.parameters:
         kwargs["device_map"] = "cuda" if resolved_device.startswith("cuda") else "cpu"
     if "torch_dtype" in signature.parameters:
@@ -110,47 +112,71 @@ def _load_kairos_model(model_dir: Path, resolved_device: str):
     return model
 
 
+def _select_kairos_point_forecast(prediction_tensor: torch.Tensor, model) -> np.ndarray:
+    tensor = prediction_tensor.detach().to("cpu").to(torch.float32)
+
+    if tensor.ndim == 3:
+        if tensor.shape[0] != 1:
+            tensor = tensor.mean(dim=0, keepdim=True)
+
+        quantiles = getattr(getattr(model, "config", None), "quantiles", None)
+        if quantiles:
+            quantile_tensor = torch.tensor(quantiles, dtype=torch.float32)
+            median_idx = int(torch.argmin(torch.abs(quantile_tensor - 0.5)).item())
+        else:
+            median_idx = tensor.shape[1] // 2
+
+        return tensor[0, median_idx].numpy().astype("float64")
+
+    if tensor.ndim == 2:
+        if tensor.shape[0] == 1:
+            return tensor[0].numpy().astype("float64")
+        return tensor.mean(dim=0).numpy().astype("float64")
+
+    if tensor.ndim == 1:
+        return tensor.numpy().astype("float64")
+
+    return tensor.reshape(-1).numpy().astype("float64")
+
+
 def _predict_with_kairos(model, history_values: np.ndarray, forecast_length: int, num_samples: int):
+    _ = num_samples
     prediction_length = int(forecast_length)
 
-    call_attempts = [
-        {"prediction_length": prediction_length, "num_samples": int(num_samples)},
-        {"horizon": prediction_length, "num_samples": int(num_samples)},
-        {"prediction_length": prediction_length},
-        {"horizon": prediction_length},
-        {},
-    ]
+    model_device = getattr(model, "device", None)
+    if model_device is None:
+        try:
+            model_device = next(model.parameters()).device
+        except StopIteration:
+            model_device = torch.device("cpu")
 
-    methods = ["forecast", "predict", "generate"]
-    errors = []
+    past_target = torch.as_tensor(history_values, dtype=torch.float32, device=model_device).unsqueeze(0)
 
-    for method_name in methods:
-        if not hasattr(model, method_name):
-            continue
-        method = getattr(model, method_name)
+    try:
+        output = model(
+            past_target=past_target,
+            prediction_length=prediction_length,
+            generation=True,
+        )
+    except TypeError:
+        output = model.generate(
+            past_target=past_target,
+            prediction_length=prediction_length,
+        )
 
-        for kwargs in call_attempts:
-            try:
-                output = method(history_values, **kwargs)
-                output_array = _normalize_prediction_output(output, prediction_length)
-                if len(output_array) >= prediction_length:
-                    return output_array[:prediction_length]
-            except TypeError as exc:
-                errors.append(f"{method_name}({kwargs}): {exc}")
-                continue
-            except Exception as exc:
-                errors.append(f"{method_name}({kwargs}): {exc}")
-                continue
-
-    raise RuntimeError(
-        "Kairos_23m inference failed with all known method signatures. "
-        f"Tried methods: {methods}. Error samples: {errors[:3]}"
-    )
+    output_array = _normalize_prediction_output(output, prediction_length, model=model)
+    if len(output_array) < prediction_length:
+        raise RuntimeError(
+            f"Kairos returned only {len(output_array)} forecast points for requested length {prediction_length}."
+        )
+    return output_array[:prediction_length]
 
 
-def _normalize_prediction_output(output, forecast_length: int):
+def _normalize_prediction_output(output, forecast_length: int, model=None):
     if isinstance(output, tuple):
         output = output[0]
+    if hasattr(output, "prediction_outputs") and output.prediction_outputs is not None:
+        return _select_kairos_point_forecast(output.prediction_outputs, model)
     if isinstance(output, pd.DataFrame):
         if output.shape[1] == 0:
             raise RuntimeError("Kairos returned an empty DataFrame.")
@@ -161,9 +187,13 @@ def _normalize_prediction_output(output, forecast_length: int):
     if isinstance(output, dict):
         for key in ("mean", "pred", "prediction", "predictions", "forecast", "point_forecast", "yhat"):
             if key in output:
-                return _normalize_prediction_output(output[key], forecast_length)
+                return _normalize_prediction_output(output[key], forecast_length, model=model)
+        if "prediction_outputs" in output:
+            return _normalize_prediction_output(output["prediction_outputs"], forecast_length, model=model)
 
     if isinstance(output, torch.Tensor):
+        if output.ndim == 3:
+            return _select_kairos_point_forecast(output, model)
         tensor = output.detach().to("cpu")
         if tensor.ndim == 0:
             return np.array([tensor.item()], dtype="float64")

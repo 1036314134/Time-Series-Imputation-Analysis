@@ -1,15 +1,24 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import importlib.util
+import logging
 import math
 import os
 import random
 import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
+
+try:
+    from transformers.utils import logging as transformers_logging
+except ImportError:
+    transformers_logging = None
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -36,6 +45,57 @@ def _load_kairos_forecastor():
 
 
 kairos_23m_forecastor = _load_kairos_forecastor()
+
+
+_KAIROS_STDERR_SUPPRESSED_PATTERNS = (
+    "Passing a tuple of `past_key_values` is deprecated",
+    "past_key_values should not be None in from_legacy_cache()",
+)
+
+
+def _suppress_known_kairos_warnings() -> None:
+    warnings.filterwarnings(
+        "ignore",
+        message=r"Prediction length .* is greater than the model's prediction length .*",
+        category=UserWarning,
+        module=r"tsfm\.model\.kairos\.modeling_kairos",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message=r"_bincount_cuda does not have a deterministic implementation.*",
+        category=UserWarning,
+        module=r"tsfm\.model\.kairos\.moe",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message=r"Passing a tuple of `past_key_values` is deprecated.*",
+        category=UserWarning,
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message=r"past_key_values should not be None in from_legacy_cache\(\)",
+        category=UserWarning,
+    )
+    if transformers_logging is not None:
+        transformers_logging.set_verbosity_error()
+    logging.getLogger("transformers.generation.utils").setLevel(logging.ERROR)
+
+
+def _run_kairos_forecast_with_filtered_stderr(**kwargs) -> pd.DataFrame:
+    stderr_buffer = io.StringIO()
+    with contextlib.redirect_stderr(stderr_buffer):
+        forecast_df = kairos_23m_forecastor(**kwargs)
+
+    remaining_lines = []
+    for line in stderr_buffer.getvalue().splitlines():
+        if any(pattern in line for pattern in _KAIROS_STDERR_SUPPRESSED_PATTERNS):
+            continue
+        remaining_lines.append(line)
+
+    if remaining_lines:
+        print("\n".join(remaining_lines), file=sys.stderr)
+
+    return forecast_df
 
 
 def set_random_seed(random_seed: int) -> None:
@@ -75,6 +135,7 @@ def sliding_window_forecast_test(
     if forecast_window <= 0:
         raise ValueError("forecast_window must be a positive integer.")
 
+    _suppress_known_kairos_warnings()
     set_random_seed(random_seed)
 
     series_df = load_data_one_series(csv_relative_path).reset_index(drop=True)
@@ -110,7 +171,7 @@ def sliding_window_forecast_test(
         prediction_start = test_start + offset
         prediction_end = prediction_start + current_window_size - 1
 
-        forecast_df = kairos_23m_forecastor(
+        forecast_df = _run_kairos_forecast_with_filtered_stderr(
             dataframe=history_df,
             forecast_length=forecast_window,
             num_samples=num_samples,

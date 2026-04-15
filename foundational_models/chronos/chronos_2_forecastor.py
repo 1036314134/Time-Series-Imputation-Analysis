@@ -68,7 +68,7 @@ def _resolve_local_model_dir(model_dir: Path) -> Path:
     if not model_dir.exists() or not any(model_dir.iterdir()):
         raise FileNotFoundError(
             f"Local model directory not found or empty: {model_dir}. "
-            "Run download_chronos_2.py first."
+            "Run chronos_2_downloader.py first."
         )
     return model_dir
 

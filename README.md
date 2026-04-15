@@ -33,6 +33,7 @@ tqdm==4.64.1
 xgboost==2.0.3
 timesfm==2.0.0
 django-layers-hr
+huggingface_hub==0.36.2
 ```
 
 ## 基础模型运行部分：
@@ -46,16 +47,13 @@ django-layers-hr
 
 运行chronos_2需要：
 
-```aiignore
-pip install "chronos-forecasting>=2.0"
-`pip install -U sagemaker`
-```
+`pip install "chronos-forecasting>=2.0"`
 
 ### karios:
 
 运行Karios_23m需要：
 
-`pip install tsfm`
+`pip install git+https://github.com/foundation-model-research/Kairos`
 
 ### moirai:
 
@@ -66,6 +64,8 @@ git clone https://github.com/SalesforceAIResearch/uni2ts.git
 cd uni2ts
 pip install -e '.[notebook]'
 ```
+
+这个模型与当前其他模型冲突较多，暂时不考虑实现。
 
 ### sundial:
 

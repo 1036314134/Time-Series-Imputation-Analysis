@@ -76,7 +76,7 @@ def _resolve_local_model_dir(model_dir: Path) -> Path:
         return model_dir
     raise FileNotFoundError(
         f"Local model directory not found or empty: {model_dir}. "
-        "Run download_kairos_23m.py first."
+        "Run kairos_23m_downloader.py first."
     )
 
 

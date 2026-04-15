@@ -81,7 +81,7 @@ def _resolve_local_model_dir(model_dir: Path) -> Path:
         return model_dir
     raise FileNotFoundError(
         f"Local model directory not found or empty: {model_dir}. "
-        "Run download_moirai_2p0_r_small.py first."
+        "Run moirai_2p0_r_small_downloader.py first."
     )
 
 

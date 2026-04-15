@@ -72,7 +72,7 @@ def _resolve_local_model_dir(model_dir: Path) -> Path:
         return model_dir
     raise FileNotFoundError(
         f"Local model directory not found or empty: {model_dir}. "
-        "Run download_visiontspp.py first."
+        "Run visiontspp_downloader.py first."
     )
 
 

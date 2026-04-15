@@ -92,7 +92,7 @@ def _ensure_local_model_dir(model_dir: Path):
     if not model_dir.exists() or not any(model_dir.iterdir()):
         raise FileNotFoundError(
             f"Local model directory not found or empty: {model_dir}. "
-            "Run download_timesfm_2p0_500m.py first."
+            "Run timesfm_2p0_500m_downloader.py first."
         )
 
 

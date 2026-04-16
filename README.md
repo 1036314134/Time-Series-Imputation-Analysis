@@ -17,11 +17,11 @@ lightgbm==4.6.0
 local-attention==1.9.14
 matplotlib==3.10.7
 MissForest==4.2.3
-numpy==2.2.6
+numpy==2.2.5
 pmdarima==2.0.4
 PyWavelets==1.8.0
-pandas==2.3.3
-patool==1.12
+pandas==2.2.3
+patool==1.12pip
 reformer-pytorch==1.4.4
 statsmodels==0.14.5
 scikit-learn==1.7.2
@@ -34,6 +34,7 @@ xgboost==2.0.3
 timesfm==2.0.0
 django-layers-hr
 huggingface_hub==0.36.2
+transformers==4.57.6
 ```
 
 ## 基础模型运行部分：

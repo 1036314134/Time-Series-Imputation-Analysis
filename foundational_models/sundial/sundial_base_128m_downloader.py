@@ -3,19 +3,19 @@ from transformers import AutoModelForCausalLM
 from huggingface_hub import snapshot_download
 
 
-# snapshot_download(
-#     repo_id="thuml/sundial-base-128m",
-#     local_dir="./sundial-base-128m",
-#     proxies={
-#         "http": "http://127.0.0.1:7890",
-#         "https": "http://127.0.0.1:7890",
-#     }
-# )
-
-model = AutoModelForCausalLM.from_pretrained(
-    "./sundial_base_128m",
-    trust_remote_code=True
+snapshot_download(
+    repo_id="thuml/sundial-base-128m",
+    local_dir="./sundial-base-128m",
+    proxies={
+        "http": "http://127.0.0.1:7890",
+        "https": "http://127.0.0.1:7890",
+    }
 )
+#
+# model = AutoModelForCausalLM.from_pretrained(
+#     "./sundial_base_128m",
+#     trust_remote_code=True
+# )
 
 # load pretrain model
 # supports different lookback/forecast lengths

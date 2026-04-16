@@ -15,3 +15,6 @@
 /foundational_models/TimesFM/timesfm_1p0_200m-pytorch
 /foundational_models/TimesFM/__pycache__
 /foundational_models/TimesFM/timesfm_1p0_200m
+/foundational_models/sundial/sundial-base-128m
+/data_processing/__pycache__
+/foundational_models/chronos/__pycache__
